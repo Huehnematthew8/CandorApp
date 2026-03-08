@@ -5,12 +5,16 @@ const rateLimit = require("express-rate-limit");
 
 const authRoutes = require("./routes/auth");
 const applicationsRoutes = require("./routes/applications");
+const profileRoutes = require("./routes/profile");
 const resumeRoutes = require("./routes/resume");
 const emailRoutes = require("./routes/email");
 
 const app = express();
 
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:3000" }));
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : ["http://localhost:3000", "http://localhost:3002"];
+app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 
 app.use(
@@ -22,6 +26,7 @@ app.use(
 
 app.use("/api/auth", authRoutes);
 app.use("/api/applications", applicationsRoutes);
+app.use("/api/profile", profileRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/email", emailRoutes);
 

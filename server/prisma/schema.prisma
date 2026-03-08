@@ -27,6 +27,15 @@ model User {
   updatedAt     DateTime       @updatedAt @map("updated_at")
   refreshTokens RefreshToken[]
   industries    Industry[]
+  profile       Profile?
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      Json     @default("{}")
+  updatedAt DateTime @updatedAt @map("updated_at")
 }
 
 model RefreshToken {

@@ -1,12 +1,12 @@
 const express = require("express");
-const { generateEmailWithAI, generateAIInsights } = require("../lib/ai");
+const { generateEmailWithAI, generateAIInsights, refineEmailWithAI } = require("../lib/ai");
 const { auth } = require("../middleware/auth");
 
 const router = express.Router();
 
 router.post("/generate", auth, async (req, res) => {
   try {
-    const { companyName, role, tone, length } = req.body;
+    const { companyName, role, tone, length, profile } = req.body;
     if (!companyName || !role) {
       return res.status(400).json({ error: "companyName and role required" });
     }
@@ -15,10 +15,17 @@ router.post("/generate", auth, async (req, res) => {
       role,
       tone: tone || "professional",
       length: length || "standard",
+      profile: profile || undefined,
     });
+    if (!email || (typeof email === "string" && !email.trim())) {
+      return res.status(503).json({
+        error: "AI did not return a response. Check that GEMINI_API_KEY or ANTHROPIC_API_KEY is set in server .env and restart the server.",
+      });
+    }
     res.json({ email });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Email generate error:", err);
+    res.status(500).json({ error: err.message || "Email generation failed" });
   }
 });
 
@@ -38,22 +45,16 @@ router.post("/refine", auth, async (req, res) => {
     if (!currentEmail || !prompt) {
       return res.status(400).json({ error: "currentEmail and prompt required" });
     }
-    const { default: Anthropic } = require("@anthropic-ai/sdk");
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const { content } = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: `Refine this cover letter based on the prompt. Return only the revised letter.\n\nCurrent:\n${currentEmail}\n\nPrompt: ${prompt}`,
-        },
-      ],
-    });
-    const block = content.find((c) => c.type === "text");
-    res.json({ email: block ? block.text : currentEmail });
+    const email = await refineEmailWithAI(currentEmail, prompt);
+    if (!email || (typeof email === "string" && !email.trim())) {
+      return res.status(503).json({
+        error: "AI did not return a response. Check GEMINI_API_KEY or ANTHROPIC_API_KEY in server .env.",
+      });
+    }
+    res.json({ email });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Email refine error:", err);
+    res.status(500).json({ error: err.message || "Refine failed" });
   }
 });
 

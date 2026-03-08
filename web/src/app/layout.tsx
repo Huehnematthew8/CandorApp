@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, DM_Sans } from "next/font/google";
+import { AuthProvider } from "@/lib/AuthContext";
 import "./globals.css";
 
 const instrumentSerif = Instrument_Serif({
@@ -28,7 +29,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${instrumentSerif.variable} ${dmSans.variable} font-sans min-h-screen`}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

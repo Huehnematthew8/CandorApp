@@ -96,3 +96,17 @@
   0%, 100% { box-shadow: 0 0 0 0 rgba(74, 155, 111, 0.4); }
   50% { box-shadow: 0 0 0 5px rgba(74, 155, 111, 0); }
 }
+
+/* Landing page slow background */
+@keyframes landing-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.04; }
+  50% { transform: translate(-50%, -50%) scale(1.08); opacity: 0.06; }
+}
+@keyframes landing-drift {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(2%, -1%); }
+  66% { transform: translate(-1%, 2%); }
+}
+.animate-landing-pulse { animation: landing-pulse 18s ease-in-out infinite; }
+.animate-landing-drift { animation: landing-drift 22s ease-in-out infinite; }
+.animate-landing-drift-reverse { animation: landing-drift 20s ease-in-out infinite reverse; }

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown, Search, Plus, Send, Copy, Save, FileText, Mail } from "lucide-react";
+import { ChevronDown, Search, Plus, Send, Copy, Save, FileText, Mail, Loader2, Folder, File, Trash2 } from "lucide-react";
 import { useIndustriesContext } from "@/lib/IndustriesContext";
-import type { Company, Industry, JobStatus } from "@/lib/database.types";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/lib/AuthContext";
+import { useProfile } from "@/lib/ProfileContext";
+import { fetchWithAuth } from "@/lib/api";
+import type { Company, Industry, JobStatus, CompanyFolder, CompanyFile } from "@/lib/database.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -40,8 +42,137 @@ const statusChevronClass: Record<JobStatus, string> = {
   rejected: "text-[var(--red)]",
 };
 
+function getAISuggestions(company: Company): { label: string; text: string }[] {
+  const name = (company.name ?? "").toLowerCase();
+  const role = (company.role ?? "").toLowerCase();
+  if (name.includes("notion")) {
+    return [
+      { label: "HIGHLIGHT", text: "Mention your collaboration redesign — directly relevant to Notion\'s team-first product direction." },
+      { label: "ANGLE", text: "Position yourself as a systems thinker who operates at the intersection of IA and scalable UI." },
+      { label: "CULTURE FIT", text: "Notion values builders. Reference any side projects or personal tools you\'ve created." },
+    ];
+  }
+  if (name.includes("linear")) {
+    return [
+      { label: "TONE", text: "Linear values precision. Keep the email tight and purposeful — no fluff." },
+      { label: "HOOK", text: "Open with a specific thing you love about Linear\'s interface — it signals you\'re a real user, not just applying." },
+    ];
+  }
+  return [
+    { label: "TIP", text: "Research recent company announcements or product launches to personalise your opening." },
+    { label: "EXPERIENCE MATCH", text: `Your experience in ${role || "this space"} is highly relevant — lead with it.` },
+    { label: "CULTURE FIT", text: "Briefly mention what draws you to the company; it shows you\'ve done your research." },
+  ];
+}
+
+function AIInsightsPanel({
+  company,
+  showToast,
+  currentEmail,
+  onRefineEmail,
+  token,
+}: {
+  company: Company;
+  showToast: (msg: string) => void;
+  currentEmail: string;
+  onRefineEmail: (prompt: string) => Promise<void>;
+  token: string | null;
+}) {
+  const [loading, setLoading] = useState(true);
+  const [refining, setRefining] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ label: string; text: string }[]>([]);
+
+  useEffect(() => {
+    setLoading(true);
+    const t = setTimeout(() => {
+      setSuggestions(getAISuggestions(company));
+      setLoading(false);
+    }, 900);
+    return () => clearTimeout(t);
+  }, [company.id]);
+
+  const quickPrompts: { label: string; prompt: string }[] = [
+    { label: "More company-specific", prompt: "Make it more specific to the company culture" },
+    { label: "Stronger experience hook", prompt: "Highlight my most relevant experience more strongly" },
+    { label: "Stronger opening", prompt: "Add a compelling opening line" },
+    { label: "Confident close", prompt: "Make the closing more confident and action-oriented" },
+  ];
+
+  const handleQuickEdit = async (prompt: string) => {
+    if (!token) {
+      showToast("Sign in to use AI edits");
+      return;
+    }
+    if (!currentEmail.trim()) {
+      showToast("Generate or write an email first");
+      return;
+    }
+    setRefining(true);
+    try {
+      await onRefineEmail(prompt);
+      showToast("Email updated");
+    } catch {
+      showToast("Refine failed. Check API and ANTHROPIC_API_KEY.");
+    } finally {
+      setRefining(false);
+    }
+  };
+
+  return (
+    <div className="ai-side-panel flex w-[240px] shrink-0 flex-col overflow-hidden border-l border-[var(--border)] bg-[var(--surface)]">
+      <div className="ai-panel-header shrink-0 border-b border-[var(--border)] px-4 py-4">
+        <div className="ai-panel-title flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+          AI Insights
+          <span className="ai-badge rounded border border-[var(--accent)]/20 bg-[var(--accent-glow)] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[var(--accent)]">LIVE</span>
+        </div>
+      </div>
+      <div className="ai-panel-scroll flex-1 overflow-y-auto p-3 [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
+        {loading ? (
+          <div className="ai-generating flex flex-col gap-1.5 px-1 py-2">
+            {[80, 95, 60].map((w, i) => (
+              <div
+                key={i}
+                className="skeleton-line h-2.5 rounded bg-[var(--surface2)]"
+                style={{ width: `${w}%` }}
+              />
+            ))}
+          </div>
+        ) : (
+          suggestions.map((s, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => {
+                showToast("Suggestion applied to draft");
+              }}
+              className="ai-suggestion mb-2 block w-full cursor-pointer rounded-lg border border-[var(--border)] bg-[var(--surface2)] p-2.5 text-left text-xs leading-snug text-[var(--text-muted)] transition-all hover:border-[var(--border2)] hover:bg-[var(--surface3)] hover:text-[var(--text)]"
+            >
+              <div className="ai-suggestion-label mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)]">{s.label}</div>
+              {s.text}
+            </button>
+          ))
+        )}
+      </div>
+      <div className="ai-quick-prompts shrink-0 border-t border-[var(--border)] p-3">
+        <div className="ai-quick-label mb-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dim)]">Quick Edits</div>
+        {quickPrompts.map(({ label, prompt }, i) => (
+          <button
+            key={i}
+            type="button"
+            disabled={refining || !token}
+            onClick={() => handleQuickEdit(prompt)}
+            className="ai-prompt-btn mb-1 block w-full rounded-md border border-transparent px-2.5 py-1.5 text-left text-[11px] leading-snug text-[var(--text-muted)] transition-colors hover:bg-[var(--surface2)] hover:border-[var(--border)] hover:text-[var(--text)] disabled:opacity-50"
+          >
+            → {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function BoardView() {
-  const { industries, setIndustries, updateCompany, moveCompanyToIndustry, addNote, addContact, addCompany, addIndustry } = useIndustriesContext();
+  const { industries, setIndustries, updateCompany, moveCompanyToIndustry, addNote, addContact, addCompany, addIndustry, addCompanyModalRequested, setAddCompanyModalRequested } = useIndustriesContext();
   const searchParams = useSearchParams();
   const companyFromUrl = searchParams.get("company");
   const [selectedId, setSelectedId] = useState<string | null>(companyFromUrl);
@@ -51,6 +182,7 @@ export function BoardView() {
       setSelectedId(companyFromUrl);
     }
   }, [companyFromUrl, industries]);
+
   const [toast, setToast] = useState<string | null>(null);
   const [addCompanyIndustryId, setAddCompanyIndustryId] = useState<string | null>(null);
   const [addIndustryOpen, setAddIndustryOpen] = useState(false);
@@ -60,6 +192,13 @@ export function BoardView() {
   const [newCompanySalary, setNewCompanySalary] = useState("");
   const [newIndustryName, setNewIndustryName] = useState("");
   const [newIndustryEmoji, setNewIndustryEmoji] = useState("💻");
+
+  useEffect(() => {
+    if (addCompanyModalRequested && industries.length > 0 && !addCompanyIndustryId) {
+      setAddCompanyIndustryId(industries[0].id);
+      setAddCompanyModalRequested(false);
+    }
+  }, [addCompanyModalRequested, industries, addCompanyIndustryId, setAddCompanyModalRequested]);
 
   const selected = industries
     .flatMap((i) => i.companies)
@@ -217,7 +356,7 @@ export function BoardView() {
       {/* Main content */}
       <div className="main-content flex flex-1 flex-col overflow-hidden bg-[var(--bg)]">
         {!selected ? (
-          <div className="empty-state flex flex-1 flex-col items-center justify-center gap-3 text-[var(--text-dim)]">
+          <div className="empty-state flex flex-1 flex-col items-center justify-center gap-3 text-[var(--text-dim)] px-4 text-center">
             <svg
               className="h-10 w-10 opacity-40 stroke-[var(--text-dim)]"
               fill="none"
@@ -227,7 +366,11 @@ export function BoardView() {
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <path d="M3 9h18M9 21V9" />
             </svg>
-            <p className="text-sm">Select a company to begin drafting</p>
+            <p className="text-sm">
+              {industries.length === 0
+                ? "Add your first industry group using the button below, then add companies to get started."
+                : "Select a company to begin drafting"}
+            </p>
           </div>
         ) : (
           <CompanyDetail
@@ -411,6 +554,264 @@ export function BoardView() {
 
 const STAGE_ORDER: JobStatus[] = ["draft", "applied", "screening", "round1", "round2", "offer"];
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return iso;
+  }
+}
+
+function FilesTabPanel({
+  companyId,
+  companyFiles,
+  setCompanyFiles,
+  currentFolderId,
+  setCurrentFolderId,
+  newFolderName,
+  setNewFolderName,
+  addingFolder,
+  setAddingFolder,
+  showToast,
+}: {
+  companyId: string;
+  companyFiles: Record<string, { folders: CompanyFolder[]; files: CompanyFile[] }>;
+  setCompanyFiles: React.Dispatch<React.SetStateAction<Record<string, { folders: CompanyFolder[]; files: CompanyFile[] }>>>;
+  currentFolderId: string | null;
+  setCurrentFolderId: (id: string | null) => void;
+  newFolderName: string;
+  setNewFolderName: (s: string) => void;
+  addingFolder: boolean;
+  setAddingFolder: (b: boolean) => void;
+  showToast: (msg: string) => void;
+}) {
+  const data = companyFiles[companyId] ?? { folders: [], files: [] };
+  const folders = data.folders.filter((f) => f.parentId === currentFolderId);
+  const files = data.files.filter((f) => f.folderId === currentFolderId);
+  const currentFolder = currentFolderId ? data.folders.find((f) => f.id === currentFolderId) : null;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const addFolder = () => {
+    const name = newFolderName.trim() || "New folder";
+    const folder: CompanyFolder = {
+      id: `folder-${Date.now()}`,
+      companyId,
+      name,
+      parentId: currentFolderId,
+      createdAt: new Date().toISOString(),
+    };
+    setCompanyFiles((prev) => ({
+      ...prev,
+      [companyId]: {
+        folders: [...(prev[companyId]?.folders ?? []), folder],
+        files: prev[companyId]?.files ?? [],
+      },
+    }));
+    setNewFolderName("");
+    setAddingFolder(false);
+    showToast(`Folder "${name}" created`);
+  };
+
+  const removeFolder = (id: string) => {
+    const inner = (data.folders.filter((f) => f.parentId === id).length + data.files.filter((f) => f.folderId === id).length);
+    if (inner > 0) {
+      showToast("Folder is not empty. Remove or move items first.");
+      return;
+    }
+    setCompanyFiles((prev) => ({
+      ...prev,
+      [companyId]: {
+        folders: (prev[companyId]?.folders ?? []).filter((f) => f.id !== id),
+        files: prev[companyId]?.files ?? [],
+      },
+    }));
+    if (currentFolderId === id) setCurrentFolderId(null);
+    showToast("Folder removed");
+  };
+
+  const removeFile = (id: string) => {
+    setCompanyFiles((prev) => ({
+      ...prev,
+      [companyId]: {
+        folders: prev[companyId]?.folders ?? [],
+        files: (prev[companyId]?.files ?? []).filter((f) => f.id !== id),
+      },
+    }));
+    showToast("File removed");
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files;
+    if (!fileList?.length) return;
+    for (let i = 0; i < fileList.length; i++) {
+      const file = fileList[i];
+      const companyFile: CompanyFile = {
+        id: `file-${Date.now()}-${i}`,
+        companyId,
+        name: file.name,
+        folderId: currentFolderId,
+        size: file.size,
+        mimeType: file.type || undefined,
+        createdAt: new Date().toISOString(),
+      };
+      setCompanyFiles((prev) => ({
+        ...prev,
+        [companyId]: {
+          folders: prev[companyId]?.folders ?? [],
+          files: [...(prev[companyId]?.files ?? []), companyFile],
+        },
+      }));
+    }
+    showToast("File(s) added");
+    e.target.value = "";
+  };
+
+  return (
+    <div className="flex flex-1 flex-col overflow-hidden px-7 pt-2 pb-5" role="tabpanel">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setCurrentFolderId(null)}
+          className="text-[13px] text-[var(--text-muted)] hover:text-[var(--text)]"
+        >
+          All files
+        </button>
+        {currentFolder && (
+          <>
+            <span className="text-[var(--text-dim)]">/</span>
+            <span className="text-[13px] text-[var(--text)]">{currentFolder.name}</span>
+          </>
+        )}
+      </div>
+      <div className="mb-3 flex flex-wrap items-center gap-2 border-b border-[var(--border)] pb-3">
+        {addingFolder ? (
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Folder name"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addFolder()}
+              className="h-8 w-48 bg-[var(--surface2)] text-sm"
+              autoFocus
+            />
+            <Button size="sm" className="h-8 rounded-full" onClick={addFolder}>
+              Create
+            </Button>
+            <Button size="sm" variant="ghost" className="h-8 rounded-full" onClick={() => { setAddingFolder(false); setNewFolderName(""); }}>
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <Button size="sm" variant="outline" className="rounded-full" onClick={() => setAddingFolder(true)}>
+            <Folder className="mr-1.5 h-3.5 w-3.5" />
+            New folder
+          </Button>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={handleFileUpload}
+          aria-hidden
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-full"
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <File className="mr-1.5 h-3.5 w-3.5" />
+          Upload
+        </Button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-[var(--border)] bg-[var(--surface)]">
+        <table className="w-full border-collapse text-left text-[13px]">
+          <thead className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface2)]">
+            <tr>
+              <th className="py-2.5 pl-4 font-medium text-[var(--text-dim)]">Name</th>
+              <th className="w-24 py-2.5 font-medium text-[var(--text-dim)]">Size</th>
+              <th className="w-28 py-2.5 font-medium text-[var(--text-dim)]">Modified</th>
+              <th className="w-10 py-2.5" />
+            </tr>
+          </thead>
+          <tbody>
+            {folders.map((folder) => (
+              <tr
+                key={folder.id}
+                className="group border-b border-[var(--border)]/50 transition-colors hover:bg-[var(--surface2)]"
+              >
+                <td className="py-2 pl-4">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentFolderId(folder.id)}
+                    className="flex items-center gap-2 text-[var(--text)]"
+                  >
+                    <Folder className="h-4 w-4 shrink-0 text-[var(--accent)]" />
+                    <span>{folder.name}</span>
+                  </button>
+                </td>
+                <td className="py-2 text-[var(--text-muted)]">—</td>
+                <td className="py-2 text-[var(--text-muted)]">{formatDate(folder.createdAt)}</td>
+                <td className="py-2">
+                  <button
+                    type="button"
+                    onClick={() => removeFolder(folder.id)}
+                    className="opacity-0 group-hover:opacity-100 rounded p-1 text-[var(--text-dim)] hover:bg-[var(--surface3)] hover:text-[var(--red)]"
+                    title="Remove folder"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {files.map((file) => (
+              <tr
+                key={file.id}
+                className="group border-b border-[var(--border)]/50 transition-colors hover:bg-[var(--surface2)]"
+              >
+                <td className="py-2 pl-4">
+                  <div className="flex items-center gap-2 text-[var(--text)]">
+                    <FileText className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
+                    <span>{file.name}</span>
+                  </div>
+                </td>
+                <td className="py-2 text-[var(--text-muted)]">{file.size != null ? formatFileSize(file.size) : "—"}</td>
+                <td className="py-2 text-[var(--text-muted)]">{formatDate(file.createdAt)}</td>
+                <td className="py-2">
+                  <button
+                    type="button"
+                    onClick={() => removeFile(file.id)}
+                    className="opacity-0 group-hover:opacity-100 rounded p-1 text-[var(--text-dim)] hover:bg-[var(--surface3)] hover:text-[var(--red)]"
+                    title="Remove file"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {folders.length === 0 && files.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 text-center text-[var(--text-muted)]">
+            <Folder className="mb-2 h-10 w-10 opacity-50" />
+            <p className="text-sm">No files or folders yet</p>
+            <p className="mt-1 text-xs">Create a folder or upload a file to get started</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CompanyDetail({
   company,
   industries,
@@ -428,7 +829,10 @@ function CompanyDetail({
   onAddContact: (companyId: string, name: string, role: string | null) => void;
   showToast: (msg: string) => void;
 }) {
+  const { token } = useAuth();
+  const { profile } = useProfile();
   const [companyName, setCompanyName] = useState(company.name);
+  const [emailGenerating, setEmailGenerating] = useState(false);
   const [role, setRole] = useState(company.role);
   const [location, setLocation] = useState(company.location ?? "");
   const [emailTo, setEmailTo] = useState(company.email_to ?? "");
@@ -440,6 +844,11 @@ function CompanyDetail({
   const [newContactName, setNewContactName] = useState("");
   const [newContactRole, setNewContactRole] = useState("");
   const [salary, setSalary] = useState(company.salary ?? "");
+  const [detailTab, setDetailTab] = useState<"email" | "notes" | "contacts" | "files">("email");
+  const [companyFiles, setCompanyFiles] = useState<Record<string, { folders: CompanyFolder[]; files: CompanyFile[] }>>({});
+  const [newFolderName, setNewFolderName] = useState("");
+  const [addingFolder, setAddingFolder] = useState(false);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
 
   const currentIndustryId = industries.find((ind) => ind.companies.some((c) => c.id === company.id))?.id ?? "";
 
@@ -451,9 +860,63 @@ function CompanyDetail({
     setEmailSubject(company.email_subject ?? "");
     setEmailBody(company.email_draft ?? "");
     setSalary(company.salary ?? "");
+    setCurrentFolderId(null);
   }, [company.id, company.name, company.role, company.location, company.email_to, company.email_subject, company.email_draft, company.salary]);
 
   const currentStageIndex = STAGE_ORDER.indexOf(company.status);
+
+  const handleGenerateEmail = async () => {
+    if (!token) {
+      showToast("Sign in to generate emails");
+      return;
+    }
+    setEmailGenerating(true);
+    try {
+      const res = await fetchWithAuth("/api/email/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName: company.name,
+          role: company.role,
+          tone: emailTone,
+          length: emailLength,
+          profile: profile?.name || profile?.narrative ? profile : undefined,
+        }),
+        token,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast(data.error || "Generate failed");
+        return;
+      }
+      if (data.email && String(data.email).trim()) {
+        setEmailBody(data.email);
+        showToast("Email generated");
+      } else {
+        showToast(data.error || "AI returned no content. Check server .env has GEMINI_API_KEY.");
+      }
+    } catch (e) {
+      showToast("Could not reach API. Is the server running on port 4000?");
+    } finally {
+      setEmailGenerating(false);
+    }
+  };
+
+  const handleRefineEmail = async (prompt: string) => {
+    if (!token) return;
+    const res = await fetchWithAuth("/api/email/refine", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentEmail: emailBody, prompt }),
+      token,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.email) {
+      setEmailBody(data.email);
+    } else {
+      throw new Error(data.error || "Refine failed");
+    }
+  };
 
   return (
     <div className="company-detail flex h-full flex-col overflow-hidden animate-in slide-in-from-right-4 duration-200">
@@ -566,21 +1029,61 @@ function CompanyDetail({
         </div>
       </div>
 
-      <Tabs defaultValue="email" className="flex min-h-0 flex-1 flex-col">
-        <TabsList className="detail-tabs shrink-0 justify-start gap-0 border-b border-[var(--border)] bg-transparent px-7 pb-0">
-          <TabsTrigger value="email" className="rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] text-[var(--text-dim)] data-[state=active]:border-[var(--accent)] data-[state=active]:text-[var(--text)]">
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="detail-tabs flex shrink-0 justify-start gap-0 border-b border-[var(--border)] bg-transparent px-7 pb-0" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={detailTab === "email"}
+            onClick={() => setDetailTab("email")}
+            className={cn(
+              "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors",
+              detailTab === "email" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
+            )}
+          >
             Cover Letter / Email
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] text-[var(--text-dim)] data-[state=active]:border-[var(--accent)] data-[state=active]:text-[var(--text)]">
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={detailTab === "notes"}
+            onClick={() => setDetailTab("notes")}
+            className={cn(
+              "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors",
+              detailTab === "notes" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
+            )}
+          >
             Notes
-          </TabsTrigger>
-          <TabsTrigger value="contacts" className="rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] text-[var(--text-dim)] data-[state=active]:border-[var(--accent)] data-[state=active]:text-[var(--text)]">
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={detailTab === "contacts"}
+            onClick={() => setDetailTab("contacts")}
+            className={cn(
+              "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors",
+              detailTab === "contacts" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
+            )}
+          >
             Contacts
-          </TabsTrigger>
-        </TabsList>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={detailTab === "files"}
+            onClick={() => setDetailTab("files")}
+            className={cn(
+              "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors",
+              detailTab === "files" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
+            )}
+          >
+            Files
+          </button>
+        </div>
 
-        <TabsContent value="email" className="email-editor flex min-h-0 flex-1 flex-col overflow-hidden pt-0">
-          <div className="email-main flex flex-1 flex-col gap-3 overflow-hidden px-7 py-5">
+        {detailTab === "email" && (
+        <div className="email-editor flex min-h-0 flex-1 flex-row overflow-hidden pt-0" role="tabpanel">
+          <div className="email-main flex min-w-0 flex-1 flex-col gap-3 overflow-hidden px-7 py-5">
             <div className="email-field flex items-center gap-3 border-b border-[var(--border)] py-2.5">
               <div className="email-field-label w-10 shrink-0 text-xs uppercase tracking-wider text-[var(--text-dim)]">To</div>
               <Input
@@ -629,6 +1132,17 @@ function CompanyDetail({
                   {len.charAt(0).toUpperCase() + len.slice(1)}
                 </button>
               ))}
+              <div className="ai-chip-divider h-4 w-px bg-[var(--border)]" />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="rounded-md border-[var(--border)] px-2.5 py-1 text-[11px] font-medium h-auto"
+                disabled={emailGenerating || !token}
+                onClick={handleGenerateEmail}
+              >
+                {emailGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : "Generate"}
+              </Button>
             </div>
             <div className="email-body-area flex-1 overflow-y-auto">
               <textarea
@@ -680,8 +1194,19 @@ function CompanyDetail({
               </Button>
             </div>
           </div>
-        </TabsContent>
-        <TabsContent value="notes" className="flex-1 overflow-y-auto px-7 pt-3 pb-5">
+
+          <AIInsightsPanel
+            company={company}
+            showToast={showToast}
+            currentEmail={emailBody}
+            onRefineEmail={handleRefineEmail}
+            token={token}
+          />
+        </div>
+        )}
+
+        {detailTab === "notes" && (
+        <div className="flex flex-1 flex-col overflow-y-auto px-7 pt-2 pb-5" role="tabpanel">
           <textarea
             className="min-h-[100px] w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--text-dim)]"
             placeholder="Add a note about this company..."
@@ -710,8 +1235,11 @@ function CompanyDetail({
               </div>
             ))}
           </div>
-        </TabsContent>
-        <TabsContent value="contacts" className="flex-1 overflow-y-auto px-7 pt-3 pb-5">
+        </div>
+        )}
+
+        {detailTab === "contacts" && (
+        <div className="flex flex-1 flex-col overflow-y-auto px-7 pt-2 pb-5" role="tabpanel">
           <div className="shrink-0 mb-3 flex flex-wrap items-end gap-2">
             <Input
               placeholder="Name"
@@ -769,8 +1297,24 @@ function CompanyDetail({
               ))
             )}
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+        )}
+
+        {detailTab === "files" && (
+        <FilesTabPanel
+          companyId={company.id}
+          companyFiles={companyFiles}
+          setCompanyFiles={setCompanyFiles}
+          currentFolderId={currentFolderId}
+          setCurrentFolderId={setCurrentFolderId}
+          newFolderName={newFolderName}
+          setNewFolderName={setNewFolderName}
+          addingFolder={addingFolder}
+          setAddingFolder={setAddingFolder}
+          showToast={showToast}
+        />
+        )}
+      </div>
     </div>
   );
 }

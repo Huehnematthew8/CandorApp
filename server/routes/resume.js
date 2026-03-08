@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const pdfParse = require("pdf-parse");
-const { parseResumeWithAI } = require("../lib/ai");
+const { parseResumeWithAI, extractProfileFromResume } = require("../lib/ai");
 
 const router = express.Router();
 
@@ -31,8 +31,22 @@ router.post("/upload", upload.single("resume"), async (req, res) => {
     if (!text || text.length < 50) {
       return res.status(400).json({ error: "Could not extract text from PDF" });
     }
-    const parsed = await parseResumeWithAI(text);
-    res.json({ text: text.slice(0, 2000), parsed });
+    let parsed = { role: null, skills: [], companies: [] };
+    let profileExtract = null;
+    if (process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY) {
+      try {
+        parsed = await parseResumeWithAI(text);
+      } catch (aiErr) {
+        console.warn("Resume AI parse skipped:", aiErr.message);
+      }
+      try {
+        profileExtract = await extractProfileFromResume(text);
+        if (!profileExtract) console.warn("Resume profile extract returned null (check Gemini response)");
+      } catch (aiErr) {
+        console.warn("Resume profile extract error:", aiErr.message);
+      }
+    }
+    res.json({ text: text.slice(0, 2000), parsed, profileExtract });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

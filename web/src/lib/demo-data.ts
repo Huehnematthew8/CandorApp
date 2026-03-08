@@ -105,7 +105,40 @@ export const STATUS_LABELS: Record<JobStatus, string> = {
   rejected: "Rejected",
 };
 
-export const PROFILE_DATA = {
+export type ProfileTimelineItem = {
+  year: string;
+  type: string;
+  title: string;
+  sub: string;
+  desc: string;
+  highlight: boolean;
+};
+export type ProfileStrength = { label: string; score: number };
+export type ProfileObservation = { type: string; icon: string; title: string; text: string };
+
+export type ProfileData = {
+  name: string;
+  headline: string;
+  narrative: string;
+  lookingFor: string;
+  skills: string[];
+  timeline: ProfileTimelineItem[];
+  strengths: ProfileStrength[];
+  observations: ProfileObservation[];
+};
+
+export const DEFAULT_PROFILE: ProfileData = {
+  name: "",
+  headline: "",
+  narrative: "",
+  lookingFor: "",
+  skills: [],
+  timeline: [],
+  strengths: [],
+  observations: [],
+};
+
+export const PROFILE_DATA: ProfileData = {
   name: "Jordan Davis",
   headline: "Senior Product Designer · 6 years experience",
   narrative:

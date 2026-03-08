@@ -1,6 +1,8 @@
 import { DashboardNav } from "@/components/dashboard-nav";
 import { DashboardHeaderActions } from "@/components/dashboard-header-actions";
+import { DashboardAuthGuard } from "@/components/dashboard-auth-guard";
 import { IndustriesProvider } from "@/lib/IndustriesContext";
+import { ProfileProvider } from "@/lib/ProfileContext";
 
 export default function DashboardLayout({
   children,
@@ -8,7 +10,9 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+    <DashboardAuthGuard>
     <IndustriesProvider>
+    <ProfileProvider>
     <div className="flex h-screen flex-col overflow-hidden bg-[var(--bg)]">
       <header
         className="flex h-[52px] shrink-0 items-center gap-6 border-b border-[var(--border)] bg-[var(--bg)] px-6"
@@ -25,6 +29,8 @@ export default function DashboardLayout({
       </header>
       <main className="flex-1 overflow-hidden">{children}</main>
     </div>
+    </ProfileProvider>
     </IndustriesProvider>
+    </DashboardAuthGuard>
   );
 }

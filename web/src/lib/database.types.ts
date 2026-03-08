@@ -46,3 +46,21 @@ export interface Note {
   content: string;
   created_at: string;
 }
+
+export interface CompanyFolder {
+  id: string;
+  companyId: string;
+  name: string;
+  parentId: string | null;
+  createdAt: string;
+}
+
+export interface CompanyFile {
+  id: string;
+  companyId: string;
+  name: string;
+  folderId: string | null;
+  size?: number;
+  mimeType?: string;
+  createdAt: string;
+}
