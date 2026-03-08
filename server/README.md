@@ -1,6 +1,8 @@
 # Candor API (Backend)
 
-Express + Prisma API for auth, industries, companies, notes, contacts, resume, and email.
+Express + Prisma API for auth, industries, companies, profile, resume, and email AI.
+
+**Running the backend:** Each developer runs the server locally (`npm run dev`) for development. To have a single shared API for your team (e.g. you and a co-founder), deploy this server to a host (e.g. Railway, Render, Fly.io) and point the web app’s `NEXT_PUBLIC_API_URL` at the deployed URL.
 
 ## Prerequisites
 

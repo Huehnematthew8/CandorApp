@@ -1,38 +1,32 @@
-# Candor Web (Next.js + Supabase + shadcn + Tailwind)
+# Candor Web (Next.js + shadcn + Tailwind)
 
-Candor job application tracker — Next.js 14 App Router, Supabase, shadcn/ui, Tailwind CSS, dark Candor theme.
+Next.js 14 App Router frontend for the Candor job application tracker. Auth, dashboard, and My Story talk to the Candor API (see **server/** in the repo root).
 
 ## Stack
 
 - **Next.js 14** (App Router, Turbopack)
 - **Tailwind CSS** — Candor design tokens in `globals.css`
 - **shadcn/ui** — Button, Card, Input, Tabs (customized for dark theme)
-- **Supabase** — Auth + DB (optional; app runs with demo data without env)
 
 ## Setup
 
 ```bash
 cd web
 npm install
-cp .env.local.example .env.local   # optional: add Supabase keys
+cp .env.local.example .env.local
+```
+
+Set in `.env.local`: `NEXT_PUBLIC_API_URL` (e.g. `http://localhost:4000`) and, for Google sign-in, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`. The backend must be running (see root **README.md** and **server/README.md**).
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Use “Continue to Dashboard” or “Skip to demo dashboard” to reach the app.
-
-## Supabase (optional)
-
-1. Create a project at [supabase.com](https://supabase.com).
-2. In SQL Editor, run `supabase/schema.sql` to create tables and RLS.
-3. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to `.env.local`.
-
-Without these, the app still runs using in-memory demo data.
-
-**To get the app fully functioning** (auth + real data): see **[GETTING_STARTED.md](./GETTING_STARTED.md)** for step-by-step Supabase setup, schema, env vars, and how to add login + wire the UI to the database.
+Open [http://localhost:3000](http://localhost:3000). Register or log in to use the dashboard.
 
 ## Routes
 
-- `/` — Onboarding (resume drop + continue to dashboard)
+- `/` — Landing (sign in / register)
 - `/dashboard` — Board (sidebar + company detail, Cover Letter / Notes / Contacts tabs)
 - `/dashboard/tracker` — All Jobs (sortable, filterable table)
 - `/dashboard/profile` — My Story (narrative, timeline, skills, strengths, observations)

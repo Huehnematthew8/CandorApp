@@ -1,49 +1,64 @@
 # Candor — AI Job Application Tracker
 
-A minimal, dark-themed AI-powered job application tracker.
+A minimal, dark-themed AI-powered job application tracker: auth, dashboard, My Story (profile), resume upload, and AI-generated emails.
 
-## Quick Start
+## Who runs the backend?
 
-### Frontend (static)
+- **Local development:** Anyone who clones the repo runs the backend on their own machine (`cd server && npm run dev`). Your co-founder (or any dev with GitHub access) clones the repo, sets up `.env` (see below), and runs both the server and the web app locally. There is no shared “live” server unless you deploy one.
+- **Shared app (optional):** To have one app and database that you and your co-founder both use without running the backend on your machine, deploy the backend (and optionally the web app) to a host (e.g. [Railway](https://railway.app), [Render](https://render.com), [Fly.io](https://fly.io)). Then set `NEXT_PUBLIC_API_URL` to that deployed API URL so the web app talks to the same backend.
 
-Open `index.html` in a browser, or serve it:
+## Quick start (anyone cloning this repo)
 
-```bash
-npx serve . -p 3000
-```
-
-Click "Skip to demo dashboard" to load the demo data.
-
-### Next.js app (web/)
-
-```bash
-cd web
-npm install
-npm run dev
-```
-
-Open http://localhost:3000. See `web/GETTING_STARTED.md` for Supabase and full setup.
-
-### Backend (optional)
-
-The API is built but not yet connected to the frontend. To run it:
+### 1. Backend (required for auth and real data)
 
 ```bash
 cd server
 npm install
-cp .env.example .env   # Add DATABASE_URL, JWT_SECRET, ANTHROPIC_API_KEY, GOOGLE_CLIENT_ID
+cp .env.example .env
+```
+
+Edit `server/.env`: set at least `DATABASE_URL` (PostgreSQL) and `JWT_SECRET`. See **server/README.md** for full options (Supabase, CORS, Gemini/Anthropic, Google sign-in).
+
+```bash
 npx prisma migrate dev
 npm run dev
 ```
 
-## Project Structure
+API runs at **http://localhost:4000**.
 
-- `index.html` — Single-file app with Board, All Jobs, My Story views
-- `web/` — Next.js + Supabase + shadcn + Tailwind (Candor app)
-- `server/` — Node.js + Express + Prisma + Anthropic
+### 2. Web app
+
+```bash
+cd web
+npm install
+cp .env.local.example .env.local
+```
+
+Edit `web/.env.local`: set `NEXT_PUBLIC_API_URL=http://localhost:4000` (or your API URL). For Google sign-in, set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to match the server’s `GOOGLE_CLIENT_ID`.
+
+```bash
+npm run dev
+```
+
+Open **http://localhost:3000** (or the port shown). Register or log in and use the dashboard.
+
+### 3. CORS
+
+If the web app runs on a different port (e.g. 3002), add it in `server/.env`:
+
+```bash
+CORS_ORIGIN="http://localhost:3000,http://localhost:3002"
+```
+
+## Project structure
+
+- **web/** — Next.js 14 (App Router), Tailwind, shadcn/ui. Login, register, dashboard, My Story, board, tracker.
+- **server/** — Express + Prisma + PostgreSQL. Auth (JWT, Google), industries/companies, profile, resume upload, email AI (Gemini or Anthropic).
+
+See **server/README.md** for detailed API and env setup. See **WEB_SERVER_SYNC.md** for how web and server stay in sync.
 
 ## Design
 
 - **Fonts:** Instrument Serif (headings) + DM Sans (body)
-- **Theme:** Dark luxury-minimal (#0c0c0e bg, #c8a97e accent)
-- **Status colours:** draft, applied (blue), screening (amber), round1 (purple), round2 (gold), offer (green, pulsing), rejected (red)
+- **Theme:** Dark (#0c0c0e bg, #c8a97e accent)
+- **Status colours:** draft, applied (blue), screening (amber), round1 (purple), round2 (gold), offer (green), rejected (red)
