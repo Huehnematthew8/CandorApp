@@ -1,0 +1,96 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status {
+  draft
+  applied
+  screening
+  round1
+  round2
+  offer
+  rejected
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  passwordHash  String?        @map("password_hash")
+  name          String?
+  googleId      String?        @unique @map("google_id")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  refreshTokens RefreshToken[]
+  industries    Industry[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model Industry {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  emoji    String?   @default("💻")
+  open      Boolean   @default(true)
+  order     Int       @default(0)
+  companies Company[]
+}
+
+model Company {
+  id          String    @id @default(uuid())
+  industryId  String    @map("industry_id")
+  industry    Industry  @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  name        String
+  role        String
+  location    String?
+  salary      String?
+  status      Status    @default(draft)
+  logo        String?   @default("🌐")
+  emailTo     String?   @map("email_to")
+  emailSubject String?  @map("email_subject")
+  emailDraft  String?   @map("email_draft")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  contacts    Contact[]
+  notes       Note[]
+  activities  Activity[]
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  role      String?
+  initials  String?
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  type      String
+  payload   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+}

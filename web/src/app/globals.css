@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Candor dark theme (match original HTML) */
+    --bg: #0c0c0e;
+    --surface: #111114;
+    --surface2: #18181c;
+    --surface3: #1f1f25;
+    --border: rgba(255, 255, 255, 0.07);
+    --border2: rgba(255, 255, 255, 0.12);
+    --text: #f0ede8;
+    --text-muted: #7a7880;
+    --text-dim: #4a4850;
+    --accent: #c8a97e;
+    --accent2: #e8d5b7;
+    --accent-glow: rgba(200, 169, 126, 0.15);
+    --green: #4a9b6f;
+    --green-dim: rgba(74, 155, 111, 0.15);
+    --blue: #5b8bd4;
+    --blue-dim: rgba(91, 139, 212, 0.15);
+    --amber: #d4875b;
+    --amber-dim: rgba(212, 135, 91, 0.15);
+    --purple: #8b6fd4;
+    --purple-dim: rgba(139, 111, 212, 0.15);
+    --red: #c45f5f;
+    --red-dim: rgba(196, 95, 95, 0.15);
+    /* Aliases for candor-* */
+    --candor-bg: var(--bg);
+    --candor-surface: var(--surface);
+    --candor-surface2: var(--surface2);
+    --candor-surface3: var(--surface3);
+    --candor-border: var(--border);
+    --candor-border2: var(--border2);
+    --candor-text: var(--text);
+    --candor-muted: var(--text-muted);
+    --candor-dim: var(--text-dim);
+    --candor-gold: var(--accent);
+    --candor-gold2: var(--accent2);
+    --candor-green: var(--green);
+    --candor-blue: var(--blue);
+    --candor-amber: var(--amber);
+    --candor-purple: var(--purple);
+    --candor-red: var(--red);
+
+    --background: 240 10% 4%;
+    --foreground: 40 15% 94%;
+    --card: 240 6% 7%;
+    --card-foreground: 40 15% 94%;
+    --popover: 240 6% 7%;
+    --popover-foreground: 40 15% 94%;
+    --primary: 38 35% 62%;
+    --primary-foreground: 40 30% 8%;
+    --secondary: 240 5% 11%;
+    --secondary-foreground: 40 15% 94%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 260 2% 50%;
+    --accent-hsl: 38 35% 62%;
+    --accent-foreground: 40 30% 8%;
+    --destructive: 0 55% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border-hsl: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 38 35% 62%;
+    --radius: 0.5rem;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    font-family: var(--font-dm-sans), ui-sans-serif, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Candor onboarding (match original) */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseDot {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 155, 111, 0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(74, 155, 111, 0); }
+}
