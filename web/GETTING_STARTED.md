@@ -6,8 +6,10 @@ Follow these steps to go from "demo only" to a working app with real auth and da
 
 ## 1. Run the app locally (you may already have this)
 
+From the **project root** (the folder that contains `web/` and `server/`):
+
 ```bash
-cd /Users/matthewhuehne/Projects/candor/web
+cd web
 npm install
 npm run dev
 ```

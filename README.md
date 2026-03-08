@@ -1,15 +1,21 @@
 # Candor — AI Job Application Tracker
 
-A minimal, dark-themed AI-powered job application tracker: auth, dashboard, My Story (profile), resume upload, and AI-generated emails.
+A minimal, dark-themed AI-powered job application tracker. Next.js frontend and Express API with auth, profile (My Story), and AI-assisted emails (Gemini or Anthropic).
 
-## Who runs the backend?
+## For anyone cloning this repo
 
-- **Local development:** Anyone who clones the repo runs the backend on their own machine (`cd server && npm run dev`). Your co-founder (or any dev with GitHub access) clones the repo, sets up `.env` (see below), and runs both the server and the web app locally. There is no shared “live” server unless you deploy one.
-- **Shared app (optional):** To have one app and database that you and your co-founder both use without running the backend on your machine, deploy the backend (and optionally the web app) to a host (e.g. [Railway](https://railway.app), [Render](https://render.com), [Fly.io](https://fly.io)). Then set `NEXT_PUBLIC_API_URL` to that deployed API URL so the web app talks to the same backend.
+All steps below use paths relative to the **project root** (the folder that contains `web/` and `server/`). Clone the repo anywhere and run from that root.
 
-## Quick start (anyone cloning this repo)
+## Prerequisites
 
-### 1. Backend (required for auth and real data)
+- **Node.js** 18+
+- **PostgreSQL** 14+ (or a Supabase project — see server setup)
+
+## Quick start
+
+### 1. Backend (API + database)
+
+From the project root:
 
 ```bash
 cd server
@@ -17,7 +23,7 @@ npm install
 cp .env.example .env
 ```
 
-Edit `server/.env`: set at least `DATABASE_URL` (PostgreSQL) and `JWT_SECRET`. See **server/README.md** for full options (Supabase, CORS, Gemini/Anthropic, Google sign-in).
+Edit `server/.env`: set at least `DATABASE_URL` (PostgreSQL) and `JWT_SECRET`. Optional: `GEMINI_API_KEY` or `ANTHROPIC_API_KEY` for AI, `GOOGLE_CLIENT_ID` for Google sign-in. See **server/README.md** for full env and Supabase/local DB setup.
 
 ```bash
 npx prisma migrate dev
@@ -26,7 +32,9 @@ npm run dev
 
 API runs at **http://localhost:4000**.
 
-### 2. Web app
+### 2. Frontend (Next.js)
+
+From the project root, in a new terminal:
 
 ```bash
 cd web
@@ -34,31 +42,27 @@ npm install
 cp .env.local.example .env.local
 ```
 
-Edit `web/.env.local`: set `NEXT_PUBLIC_API_URL=http://localhost:4000` (or your API URL). For Google sign-in, set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to match the server’s `GOOGLE_CLIENT_ID`.
+Edit `web/.env.local`: set `NEXT_PUBLIC_API_URL=http://localhost:4000` (and `NEXT_PUBLIC_GOOGLE_CLIENT_ID` if using Google login). Ensure `server/.env` has `CORS_ORIGIN` including your web origin (e.g. `http://localhost:3000` or `http://localhost:3002`).
 
 ```bash
 npm run dev
 ```
 
-Open **http://localhost:3000** (or the port shown). Register or log in and use the dashboard.
-
-### 3. CORS
-
-If the web app runs on a different port (e.g. 3002), add it in `server/.env`:
-
-```bash
-CORS_ORIGIN="http://localhost:3000,http://localhost:3002"
-```
+Open **http://localhost:3000** (or the port shown). Register or log in, then use the dashboard.
 
 ## Project structure
 
-- **web/** — Next.js 14 (App Router), Tailwind, shadcn/ui. Login, register, dashboard, My Story, board, tracker.
-- **server/** — Express + Prisma + PostgreSQL. Auth (JWT, Google), industries/companies, profile, resume upload, email AI (Gemini or Anthropic).
+| Path       | Description |
+|-----------|-------------|
+| `web/`    | Next.js 14 (App Router), Tailwind, shadcn — landing, login/register, dashboard, board, My Story |
+| `server/` | Express + Prisma + PostgreSQL — auth (JWT + Google), industries/companies, profile, resume upload, AI email |
 
-See **server/README.md** for detailed API and env setup. See **WEB_SERVER_SYNC.md** for how web and server stay in sync.
+- **server/README.md** — Database setup (Supabase or local), env vars, migrations, API overview.
+- **web/README.md** — Web stack, routes, optional Supabase.
+- **WEB_SERVER_SYNC.md** — Env and CORS checklist for web ↔ server.
 
 ## Design
 
 - **Fonts:** Instrument Serif (headings) + DM Sans (body)
 - **Theme:** Dark (#0c0c0e bg, #c8a97e accent)
-- **Status colours:** draft, applied (blue), screening (amber), round1 (purple), round2 (gold), offer (green), rejected (red)
+- **Status colours:** applied (blue), screening (amber), round1 (purple), round2 (gold), offer (green), rejected (red)
