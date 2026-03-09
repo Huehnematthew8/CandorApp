@@ -1,12 +1,12 @@
 const express = require("express");
-const { generateEmailWithAI, generateAIInsights, refineEmailWithAI } = require("../lib/ai");
+const { generateEmailWithAI, generateAIInsights, refineEmailWithAI, getAIUnavailableMessage, generateSubjectLinesWithAI } = require("../lib/ai");
 const { auth } = require("../middleware/auth");
 
 const router = express.Router();
 
 router.post("/generate", auth, async (req, res) => {
   try {
-    const { companyName, role, tone, length, profile } = req.body;
+    const { companyName, role, tone, length, profile, stage, jdText, jdAnalysis, companyCountry, companyVisaRequired, templateBody } = req.body;
     if (!companyName || !role) {
       return res.status(400).json({ error: "companyName and role required" });
     }
@@ -16,10 +16,16 @@ router.post("/generate", auth, async (req, res) => {
       tone: tone || "professional",
       length: length || "standard",
       profile: profile || undefined,
+      stage: stage || "draft",
+      jdText: jdText || undefined,
+      jdAnalysis: jdAnalysis || undefined,
+      companyCountry: companyCountry || undefined,
+      companyVisaRequired: companyVisaRequired === true || companyVisaRequired === "true",
+      templateBody: templateBody || undefined,
     });
     if (!email || (typeof email === "string" && !email.trim())) {
       return res.status(503).json({
-        error: "AI did not return a response. Check that GEMINI_API_KEY or ANTHROPIC_API_KEY is set in server .env and restart the server.",
+        error: getAIUnavailableMessage(),
       });
     }
     res.json({ email });
@@ -39,6 +45,20 @@ router.post("/insights", auth, async (req, res) => {
   }
 });
 
+router.post("/subject-lines", auth, async (req, res) => {
+  try {
+    const { companyName, role, profile } = req.body;
+    if (!companyName || !role) {
+      return res.status(400).json({ error: "companyName and role required" });
+    }
+    const lines = await generateSubjectLinesWithAI({ companyName, role, profile: profile || undefined });
+    res.json({ subjectLines: Array.isArray(lines) ? lines : [] });
+  } catch (err) {
+    console.error("Subject lines error:", err);
+    res.status(500).json({ error: err.message || "Failed to generate subject lines" });
+  }
+});
+
 router.post("/refine", auth, async (req, res) => {
   try {
     const { currentEmail, prompt } = req.body;
@@ -48,7 +68,7 @@ router.post("/refine", auth, async (req, res) => {
     const email = await refineEmailWithAI(currentEmail, prompt);
     if (!email || (typeof email === "string" && !email.trim())) {
       return res.status(503).json({
-        error: "AI did not return a response. Check GEMINI_API_KEY or ANTHROPIC_API_KEY in server .env.",
+        error: getAIUnavailableMessage(),
       });
     }
     res.json({ email });

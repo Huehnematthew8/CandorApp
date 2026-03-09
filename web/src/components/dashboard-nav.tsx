@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutGrid, List, User } from "lucide-react";
+import { LayoutGrid, List, User, Columns3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Board", icon: LayoutGrid },
   { href: "/dashboard/tracker", label: "All Jobs", icon: List },
+  { href: "/dashboard/kanban", label: "Kanban", icon: Columns3 },
   { href: "/dashboard/profile", label: "My Story", icon: User },
 ];
 

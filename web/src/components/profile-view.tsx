@@ -5,7 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, getInitialsFromName } from "@/lib/utils";
-import { getApiUrl } from "@/lib/api";
+import { getApiUrl, fetchWithAuth } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 import { useProfile } from "@/lib/ProfileContext";
 import type { ProfileData, ProfileTimelineItem, ProfileStrength, ProfileObservation } from "@/lib/demo-data";
 
@@ -21,6 +22,7 @@ const SKILL_CHIP_COLORS = [
 ];
 
 export function ProfileView() {
+  const { token } = useAuth();
   const { profile, setProfile, saveProfile, loading } = useProfile();
   const [saving, setSaving] = useState(false);
   const [resumeStatus, setResumeStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
@@ -29,11 +31,17 @@ export function ProfileView() {
   const [pendingProfileExtract, setPendingProfileExtract] = useState<Partial<ProfileData> | null>(null);
   const [newSkillInput, setNewSkillInput] = useState("");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
   const resumeInputRef = useRef<HTMLInputElement>(null);
 
   const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!token) {
+      setResumeStatus("error");
+      setResumeMessage("Please sign in to upload a resume.");
+      return;
+    }
     const allowed = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
     if (!allowed.includes(file.type)) {
       setResumeStatus("error");
@@ -47,7 +55,7 @@ export function ProfileView() {
     const formData = new FormData();
     formData.append("resume", file);
     try {
-      const res = await fetch(getApiUrl("/api/resume/upload"), { method: "POST", body: formData });
+      const res = await fetchWithAuth("/api/resume/upload", { method: "POST", body: formData, token });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setResumeStatus("error");
@@ -55,19 +63,40 @@ export function ProfileView() {
         return;
       }
       setResumeStatus("success");
-      setResumeMessage("Resume uploaded.");
+      setResumeMessage("Resume saved. New uploads replace the previous file.");
+      setProfile((prev) => ({ ...prev, resumeUploadedAt: new Date().toISOString() }));
       const extract = data.profileExtract;
       if (extract && typeof extract === "object" && (extract.name != null || extract.narrative != null || (Array.isArray(extract.skills) && extract.skills.length) || (Array.isArray(extract.timeline) && extract.timeline.length))) {
         setPendingProfileExtract(extract);
         setShowUpdateProfileModal(true);
-      } else {
-        setResumeMessage("Resume uploaded. Add GEMINI_API_KEY to server .env and restart to extract profile from resume.");
+      } else if (!data.profileExtract) {
+        setResumeMessage("Resume saved. Add GEMINI_API_KEY to server .env to extract profile from resume.");
       }
     } catch {
       setResumeStatus("error");
       setResumeMessage("Could not reach the server.");
     }
     e.target.value = "";
+  };
+
+  const handlePreviewResume = async () => {
+    if (!token) return;
+    setPreviewLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/resume/file", { token });
+      if (!res.ok) {
+        setResumeMessage("No resume on file or failed to load.");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      setResumeMessage("Could not load resume.");
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   const applyProfileExtract = async () => {
@@ -123,7 +152,7 @@ export function ProfileView() {
   const addTimeline = () => {
     setProfile((prev) => ({
       ...prev,
-      timeline: [...prev.timeline, { year: "", type: "work", title: "", sub: "", desc: "", highlight: false }],
+      timeline: [...prev.timeline, { year: "", endDate: "", type: "work", title: "", sub: "", desc: "", highlight: false }],
     }));
   };
   const removeTimeline = (index: number) => {
@@ -182,28 +211,45 @@ export function ProfileView() {
           </Button>
         )}
       </div>
+      <p className="text-sm text-[var(--candor-muted)]">
+        This page is your shared reference with the AI: keep it updated so tailored emails and applications stay accurate. The AI uses only what you write here (not the raw resume) when writing for you.
+      </p>
 
-      {/* Resume re-upload */}
+      {/* Resume */}
       <Card className="border-[var(--candor-border2)] bg-[var(--candor-surface2)]">
         <CardContent className="pt-6">
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-[var(--candor-muted)]">Resume</h3>
-          <p className="mb-3 text-sm text-[var(--candor-muted)]">Upload a new resume to update your profile. PDF or DOCX. AI uses your profile and resume to tailor emails.</p>
-          <input
-            ref={resumeInputRef}
-            type="file"
-            accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            onChange={handleResumeUpload}
-            className="hidden"
-            aria-label="Upload resume"
-          />
-          <button
-            type="button"
-            onClick={() => resumeInputRef.current?.click()}
-            disabled={resumeStatus === "uploading"}
-            className="rounded-full border border-[var(--candor-border2)] bg-[var(--candor-surface3)] px-4 py-2 text-sm font-medium text-[var(--candor-text)] transition-colors hover:bg-[var(--candor-surface)] disabled:opacity-50"
-          >
-            {resumeStatus === "uploading" ? "Uploading…" : resumeStatus === "success" ? "Updated ✓" : "Upload new resume"}
-          </button>
+          <p className="mb-3 text-sm text-[var(--candor-muted)]">
+            Upload a PDF resume (new uploads replace the existing one). AI uses it to tailor emails. You can preview the saved file below.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              ref={resumeInputRef}
+              type="file"
+              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={handleResumeUpload}
+              className="hidden"
+              aria-label="Upload resume"
+            />
+            <button
+              type="button"
+              onClick={() => resumeInputRef.current?.click()}
+              disabled={resumeStatus === "uploading"}
+              className="rounded-full border border-[var(--candor-border2)] bg-[var(--candor-surface3)] px-4 py-2 text-sm font-medium text-[var(--candor-text)] transition-colors hover:bg-[var(--candor-surface)] disabled:opacity-50"
+            >
+              {resumeStatus === "uploading" ? "Uploading…" : resumeStatus === "success" ? "Saved ✓" : "Upload resume"}
+            </button>
+            {profile.resumeUploadedAt && (
+              <button
+                type="button"
+                onClick={handlePreviewResume}
+                disabled={previewLoading}
+                className="rounded-full border border-[var(--candor-border2)] bg-[var(--candor-surface3)] px-4 py-2 text-sm font-medium text-[var(--candor-text)] transition-colors hover:bg-[var(--candor-surface)] disabled:opacity-50"
+              >
+                {previewLoading ? "Opening…" : "Preview resume"}
+              </button>
+            )}
+          </div>
           {resumeMessage && (
             <p className={cn("mt-2 text-sm", resumeStatus === "error" ? "text-[var(--candor-red)]" : "text-[var(--candor-muted)]")}>
               {resumeMessage}
@@ -212,6 +258,45 @@ export function ProfileView() {
         </CardContent>
       </Card>
 
+      {/* Profile completeness */}
+      {(() => {
+        const checks = [
+          [!!profile.name?.trim(), "Name"],
+          [!!profile.headline?.trim(), "Headline"],
+          [!!profile.narrative?.trim(), "Narrative"],
+          [!!profile.lookingFor?.trim(), "What you're looking for"],
+          [(profile.skills?.length ?? 0) > 0, "Skills"],
+          [(profile.timeline?.length ?? 0) > 0, "Experience timeline"],
+          [!!(profile.workRights?.trim() || profile.basedIn?.trim()), "Work rights / location"],
+        ];
+        const filled = checks.filter(([ok]) => ok).length;
+        const total = checks.length;
+        const score = total ? Math.round((filled / total) * 100) : 0;
+        const missing = checks.filter(([ok]) => !ok).map(([, label]) => label);
+        return (
+          <Card className="border-[var(--candor-border2)] bg-[var(--candor-surface2)] mb-4">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex items-center gap-2" title="Profile completeness">
+                  <div className="relative h-10 w-10">
+                    <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--candor-border2)" strokeWidth="2.5" />
+                      <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--candor-gold)" strokeWidth="2.5" strokeDasharray={`${score}, 100`} strokeLinecap="round" />
+                    </svg>
+                  </div>
+                  <span className="text-sm font-medium text-[var(--candor-text)]">{score}% complete</span>
+                </div>
+                {missing.length > 0 && (
+                  <p className="text-xs text-[var(--candor-muted)]">
+                    Missing: {missing.join(", ")}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Name & headline */}
       <Card className="border-[var(--candor-border2)] bg-[var(--candor-surface2)]">
         <CardContent className="pt-6">
@@ -219,6 +304,7 @@ export function ProfileView() {
             <div
               className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-2xl font-semibold text-[#1a1508]"
               style={{ background: "linear-gradient(135deg, var(--candor-gold), var(--candor-purple))" }}
+              title={`Profile: ${(() => { const c = [[!!profile.name?.trim(), "Name"], [!!profile.headline?.trim(), "Headline"], [!!profile.narrative?.trim(), "Narrative"], [(profile.skills?.length ?? 0) > 0, "Skills"], [(profile.timeline?.length ?? 0) > 0, "Timeline"]]; const f = c.filter(([ok]) => ok).length; return Math.round((f / c.length) * 100) + "%"; })()}`}
             >
               {getInitialsFromName(profile.name)}
             </div>
@@ -352,6 +438,50 @@ export function ProfileView() {
         </CardContent>
       </Card>
 
+      {/* Work rights & location (overseas / visa) */}
+      <Card className="bg-[var(--candor-surface2)]">
+        <CardContent className="pt-6">
+          <h3 className="mb-2 text-sm font-semibold uppercase tracking-wider text-[var(--candor-muted)]">Work Rights & Location</h3>
+          <p className="mb-3 text-xs text-[var(--candor-dim)]">Used in applications when the role is overseas or requires visa info.</p>
+          {isPreviewMode ? (
+            <div className="space-y-1 text-sm text-[var(--candor-text)]">
+              {profile.workRights && <p><span className="text-[var(--candor-muted)]">Work rights:</span> {profile.workRights}</p>}
+              {profile.basedIn && <p><span className="text-[var(--candor-muted)]">Based in:</span> {profile.basedIn}</p>}
+              {profile.openToRelocate && <p><span className="text-[var(--candor-muted)]">Open to relocate:</span> {profile.openToRelocate}</p>}
+              {profile.targetCountries?.length ? <p><span className="text-[var(--candor-muted)]">Target countries:</span> {profile.targetCountries.join(", ")}</p> : null}
+              {!profile.workRights && !profile.basedIn && !profile.openToRelocate && !profile.targetCountries?.length && <p className="text-[var(--candor-dim)]">—</p>}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <input
+                placeholder="Work rights / visa (e.g. Australian citizen, UK work permit)"
+                value={profile.workRights ?? ""}
+                onChange={(e) => update({ workRights: e.target.value })}
+                className="w-full rounded-lg border border-[var(--candor-border2)] bg-[var(--candor-surface3)] px-3 py-2 text-sm text-[var(--candor-text)] placeholder:text-[var(--candor-dim)]"
+              />
+              <input
+                placeholder="Based in (e.g. Sydney, Australia)"
+                value={profile.basedIn ?? ""}
+                onChange={(e) => update({ basedIn: e.target.value })}
+                className="w-full rounded-lg border border-[var(--candor-border2)] bg-[var(--candor-surface3)] px-3 py-2 text-sm text-[var(--candor-text)] placeholder:text-[var(--candor-dim)]"
+              />
+              <input
+                placeholder="Open to relocate (e.g. Yes, Remote only, EU preferred)"
+                value={profile.openToRelocate ?? ""}
+                onChange={(e) => update({ openToRelocate: e.target.value })}
+                className="w-full rounded-lg border border-[var(--candor-border2)] bg-[var(--candor-surface3)] px-3 py-2 text-sm text-[var(--candor-text)] placeholder:text-[var(--candor-dim)]"
+              />
+              <input
+                placeholder="Target countries (comma-separated)"
+                value={(profile.targetCountries ?? []).join(", ")}
+                onChange={(e) => update({ targetCountries: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+                className="w-full rounded-lg border border-[var(--candor-border2)] bg-[var(--candor-surface3)] px-3 py-2 text-sm text-[var(--candor-text)] placeholder:text-[var(--candor-dim)]"
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Career Timeline */}
       <Card className="bg-[var(--candor-surface2)]">
         <CardContent className="pt-6">
@@ -364,7 +494,9 @@ export function ProfileView() {
                 profile.timeline.map((item, i) => (
                   <div key={i} className="flex gap-4 rounded-lg border border-[var(--candor-border2)] bg-[var(--candor-surface3)] p-3">
                     <div className="flex flex-col items-center">
-                      <span className="text-xs font-medium text-[var(--candor-muted)]">{item.year || "—"}</span>
+                      <span className="text-xs font-medium text-[var(--candor-muted)]">
+                        {[item.year, item.endDate].filter(Boolean).join(" – ") || "—"}
+                      </span>
                       {i < profile.timeline.length - 1 && <div className="my-1 w-px flex-1 bg-[var(--candor-border)]" />}
                     </div>
                     <div className="min-w-0 flex-1 space-y-0.5">
@@ -382,13 +514,20 @@ export function ProfileView() {
               <div className="space-y-4">
                 {profile.timeline.map((item, i) => (
                   <div key={i} className="flex gap-4 rounded-lg border border-[var(--candor-border2)] bg-[var(--candor-surface3)] p-3">
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col gap-1.5">
                       <input
                         type="text"
-                        placeholder="Year"
+                        placeholder="Start (e.g. 2020 or Jan 2020)"
                         value={item.year}
                         onChange={(e) => updateTimeline(i, { year: e.target.value })}
-                        className="w-14 rounded border border-[var(--candor-border2)] bg-[var(--candor-surface2)] px-1.5 py-0.5 text-xs"
+                        className="w-36 rounded border border-[var(--candor-border2)] bg-[var(--candor-surface2)] px-2 py-1 text-xs"
+                      />
+                      <input
+                        type="text"
+                        placeholder="End (e.g. 2022 or Present)"
+                        value={item.endDate ?? ""}
+                        onChange={(e) => updateTimeline(i, { endDate: e.target.value || undefined })}
+                        className="w-36 rounded border border-[var(--candor-border2)] bg-[var(--candor-surface2)] px-2 py-1 text-xs"
                       />
                       {i < profile.timeline.length - 1 && <div className="my-1 w-px flex-1 bg-[var(--candor-border)]" />}
                     </div>

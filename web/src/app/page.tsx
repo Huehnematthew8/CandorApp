@@ -1,25 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { LandingBackground } from "@/components/landing-background";
 
 export default function LandingPage() {
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[var(--bg)]">
-      {/* Slow-moving minimal background */}
-      <div className="pointer-events-none absolute inset-0">
-        <div
-          className="animate-landing-pulse absolute left-1/2 top-1/2 h-[120vmax] w-[120vmax] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.04]"
-          style={{ background: "radial-gradient(circle, var(--accent) 0%, transparent 55%)" }}
-        />
-        <div
-          className="animate-landing-drift absolute left-[20%] top-[30%] h-[80vmax] w-[80vmax] rounded-full opacity-[0.03]"
-          style={{ background: "radial-gradient(circle, var(--blue) 0%, transparent 60%)" }}
-        />
-        <div
-          className="animate-landing-drift-reverse absolute right-[15%] bottom-[25%] h-[70vmax] w-[70vmax] rounded-full opacity-[0.03]"
-          style={{ background: "radial-gradient(circle, var(--purple) 0%, transparent 60%)" }}
-        />
-      </div>
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0c0c0e]">
+      <LandingBackground />
 
       <div className="relative z-10 flex flex-col items-center px-6 py-12 text-center">
         <div className="mb-10 flex items-center gap-2">

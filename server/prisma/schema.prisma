@@ -71,6 +71,15 @@ model Company {
   emailTo     String?   @map("email_to")
   emailSubject String?  @map("email_subject")
   emailDraft  String?   @map("email_draft")
+  emailThread Json?     @map("email_thread")  // [{ id, direction?, stage, type, subject, body, tone, sentAt, receivedAt?, from?, wordCount }]
+  savedTone   String?   @map("saved_tone")
+  appliedAt   DateTime? @map("applied_at")
+  jdText      String?   @map("jd_text")
+  jdAnalysis  Json?     @map("jd_analysis")   // { matchScore, matchedKeywords, missingKeywords, suggestedAngle, redFlags }
+  country     String?   @map("country")
+  visaRequired Boolean? @map("visa_required")
+  workRights  String?   @map("work_rights")
+  interviewPrep Json?   @map("interview_prep") // { questions, answers, talkingPoints, researchNotes, questionsToAsk }
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   contacts    Contact[]

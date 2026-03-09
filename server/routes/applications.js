@@ -65,20 +65,21 @@ router.delete("/industries/:id", async (req, res) => {
 
 router.post("/industries/:id/companies", async (req, res) => {
   try {
-    const { name, role, location, salary } = req.body;
+    const { name, role, location, salary, jdText, jdAnalysis } = req.body;
     const industry = await prisma.industry.findFirst({
       where: { id: req.params.id, userId: req.userId },
     });
     if (!industry) return res.status(404).json({ error: "Industry not found" });
-    const company = await prisma.company.create({
-      data: {
-        industryId: industry.id,
-        name: name || "New Company",
-        role: role || "",
-        location,
-        salary,
-      },
-    });
+    const data = {
+      industryId: industry.id,
+      name: name || "New Company",
+      role: role || "",
+      location: location || undefined,
+      salary: salary || undefined,
+    };
+    if (jdText !== undefined) data.jdText = jdText;
+    if (jdAnalysis !== undefined) data.jdAnalysis = jdAnalysis;
+    const company = await prisma.company.create({ data });
     res.json(company);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -87,7 +88,11 @@ router.post("/industries/:id/companies", async (req, res) => {
 
 router.put("/companies/:id", async (req, res) => {
   try {
-    const { name, role, location, salary, status, emailTo, emailSubject, emailDraft } = req.body;
+    const {
+      name, role, location, salary, status,
+      emailTo, emailSubject, emailDraft, emailThread, savedTone,
+      appliedAt, jdText, jdAnalysis, country, visaRequired, workRights, interviewPrep,
+    } = req.body;
     const company = await prisma.company.findFirst({
       where: { id: req.params.id },
       include: { industry: true },
@@ -95,9 +100,32 @@ router.put("/companies/:id", async (req, res) => {
     if (!company || company.industry.userId !== req.userId) {
       return res.status(404).json({ error: "Company not found" });
     }
+    const data = {};
+    if (name !== undefined) data.name = name;
+    if (role !== undefined) data.role = role;
+    if (location !== undefined) data.location = location;
+    if (salary !== undefined) data.salary = salary;
+    if (status !== undefined) {
+      data.status = status;
+      if (status === "applied" && appliedAt === undefined && company.appliedAt == null) {
+        data.appliedAt = new Date();
+      }
+    }
+    if (appliedAt !== undefined) data.appliedAt = appliedAt ? new Date(appliedAt) : null;
+    if (emailTo !== undefined) data.emailTo = emailTo;
+    if (emailSubject !== undefined) data.emailSubject = emailSubject;
+    if (emailDraft !== undefined) data.emailDraft = emailDraft;
+    if (emailThread !== undefined) data.emailThread = Array.isArray(emailThread) ? emailThread : [];
+    if (savedTone !== undefined) data.savedTone = savedTone;
+    if (jdText !== undefined) data.jdText = jdText;
+    if (jdAnalysis !== undefined) data.jdAnalysis = jdAnalysis;
+    if (country !== undefined) data.country = country;
+    if (visaRequired !== undefined) data.visaRequired = visaRequired;
+    if (workRights !== undefined) data.workRights = workRights;
+    if (interviewPrep !== undefined) data.interviewPrep = interviewPrep;
     const updated = await prisma.company.update({
       where: { id: req.params.id },
-      data: { name, role, location, salary, status, emailTo, emailSubject, emailDraft },
+      data,
     });
     res.json(updated);
   } catch (err) {

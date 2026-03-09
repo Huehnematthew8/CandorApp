@@ -8,6 +8,8 @@ const applicationsRoutes = require("./routes/applications");
 const profileRoutes = require("./routes/profile");
 const resumeRoutes = require("./routes/resume");
 const emailRoutes = require("./routes/email");
+const jdRoutes = require("./routes/jd");
+const parseJdRoutes = require("./routes/parse-jd");
 
 const app = express();
 
@@ -29,6 +31,8 @@ app.use("/api/applications", applicationsRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/resume", resumeRoutes);
 app.use("/api/email", emailRoutes);
+app.use("/api/jd", jdRoutes);
+app.use("/api/parse-jd", parseJdRoutes);
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 

@@ -12,6 +12,9 @@ web/out/
 .env.local
 .env*.local
 
+# Uploaded files (resumes)
+server/uploads/
+
 # IDE / OS
 .idea/
 .vscode/

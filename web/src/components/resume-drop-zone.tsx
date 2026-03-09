@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { getApiUrl } from "@/lib/api";
+import { fetchWithAuth } from "@/lib/api";
+import { useAuth } from "@/lib/AuthContext";
 
 export function ResumeDropZone({
   onSuccess,
-  successMessage = "Resume parsed. Taking you to dashboard…",
+  successMessage = "Resume saved. Taking you to dashboard…",
 }: {
   onSuccess?: () => void;
   successMessage?: string;
 } = {}) {
+  const { token } = useAuth();
   const [status, setStatus] = useState<"idle" | "uploading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -18,6 +20,11 @@ export function ResumeDropZone({
 
   const upload = async (file: File) => {
     if (!file) return;
+    if (!token) {
+      setStatus("error");
+      setMessage("Please sign in to upload a resume.");
+      return;
+    }
     const allowed = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
     if (!allowed.includes(file.type)) {
       setStatus("error");
@@ -29,9 +36,10 @@ export function ResumeDropZone({
     const formData = new FormData();
     formData.append("resume", file);
     try {
-      const res = await fetch(getApiUrl("/api/resume/upload"), {
+      const res = await fetchWithAuth("/api/resume/upload", {
         method: "POST",
         body: formData,
+        token,
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {

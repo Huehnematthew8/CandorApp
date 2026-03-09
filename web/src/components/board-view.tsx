@@ -7,7 +7,7 @@ import { useIndustriesContext } from "@/lib/IndustriesContext";
 import { useAuth } from "@/lib/AuthContext";
 import { useProfile } from "@/lib/ProfileContext";
 import { fetchWithAuth } from "@/lib/api";
-import type { Company, Industry, JobStatus, CompanyFolder, CompanyFile } from "@/lib/database.types";
+import type { Company, Industry, JobStatus, CompanyFolder, CompanyFile, EmailThreadEntry, InterviewPrep } from "@/lib/database.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,25 @@ const statusChevronClass: Record<JobStatus, string> = {
   round2: "text-[var(--accent)]",
   offer: "text-[var(--green)]",
   rejected: "text-[var(--red)]",
+};
+
+const INDUSTRY_EMOJIS = [
+  "💻", "📱", "🖥️", "⚙️", "🔧", "🤖", "📡", "💡", "🔬", "🧪",
+  "🎨", "✨", "🎭", "🎬", "📸", "🎵", "🎸", "🎯", "🖌️", "📐",
+  "📊", "💼", "📈", "🏦", "💰", "📉", "📋", "📁", "🗂️", "📌",
+  "🚀", "🌟", "⭐", "✦", "♦", "🔮", "🏆", "🎪", "🌈", "🔥",
+  "🏥", "💊", "🧬", "📚", "🎓", "🏫", "🏭", "🛒", "🍳", "☕",
+  "🌍", "✈️", "🏠", "🛠️", "📦", "🔐", "📧", "💬", "🎮", "🏃",
+];
+
+const COMMS_STAGE_LABELS: Record<JobStatus, string> = {
+  draft: "Cover Letter",
+  applied: "Follow-up",
+  screening: "Pre-interview note",
+  round1: "Thank you — Round 1",
+  round2: "Thank you — Round 2",
+  offer: "Negotiation email",
+  rejected: "Keep the door open",
 };
 
 function getAISuggestions(company: Company): { label: string; text: string }[] {
@@ -173,6 +192,8 @@ function AIInsightsPanel({
 
 export function BoardView() {
   const { industries, setIndustries, updateCompany, moveCompanyToIndustry, addNote, addContact, addCompany, addIndustry, addCompanyModalRequested, setAddCompanyModalRequested } = useIndustriesContext();
+  const { token } = useAuth();
+  const { profile } = useProfile();
   const searchParams = useSearchParams();
   const companyFromUrl = searchParams.get("company");
   const [selectedId, setSelectedId] = useState<string | null>(companyFromUrl);
@@ -192,13 +213,56 @@ export function BoardView() {
   const [newCompanySalary, setNewCompanySalary] = useState("");
   const [newIndustryName, setNewIndustryName] = useState("");
   const [newIndustryEmoji, setNewIndustryEmoji] = useState("💻");
+  const [quickAddInput, setQuickAddInput] = useState("");
+  const [quickAddLoading, setQuickAddLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<JobStatus | "followup" | null>(null);
+  const [newCompanyTemplateId, setNewCompanyTemplateId] = useState<string | "">("");
+
+  const allCompanies = industries.flatMap((i) => i.companies);
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  const progressStats = (() => {
+    const applied = allCompanies.filter((c) => c.status === "applied");
+    const appliedWithDate = applied.filter((c) => c.applied_at);
+    const followUpDue = appliedWithDate.filter((c) => {
+      const appliedAt = new Date(c.applied_at!).getTime();
+      const days = (now - appliedAt) / day;
+      return days >= 8;
+    });
+    const interviews = allCompanies.filter((c) => ["screening", "round1", "round2"].includes(c.status));
+    const responseRate = applied.length > 0 ? Math.round((interviews.length + allCompanies.filter((c) => c.status === "offer").length) / applied.length * 100) : 0;
+    return {
+      tracked: allCompanies.length,
+      draft: allCompanies.filter((c) => c.status === "draft").length,
+      applied: applied.length,
+      interviews: interviews.length,
+      offer: allCompanies.filter((c) => c.status === "offer").length,
+      rejected: allCompanies.filter((c) => c.status === "rejected").length,
+      responseRate,
+      followUpDue: followUpDue.length,
+    };
+  })();
+
+  const filteredIndustries = filterStatus === "followup"
+    ? industries.map((ind) => ({ ...ind, companies: ind.companies.filter((c) => c.status === "applied" && c.applied_at && (now - new Date(c.applied_at).getTime()) / day >= 8) })).filter((ind) => ind.companies.length > 0)
+    : filterStatus
+      ? industries.map((ind) => ({ ...ind, companies: ind.companies.filter((c) => c.status === filterStatus) })).filter((ind) => ind.companies.length > 0)
+      : industries;
 
   useEffect(() => {
-    if (addCompanyModalRequested && industries.length > 0 && !addCompanyIndustryId) {
+    if (!addCompanyModalRequested || addCompanyIndustryId) return;
+    if (industries.length > 0) {
       setAddCompanyIndustryId(industries[0].id);
       setAddCompanyModalRequested(false);
+      return;
     }
-  }, [addCompanyModalRequested, industries, addCompanyIndustryId, setAddCompanyModalRequested]);
+    addIndustry("Uncategorised", "📋").then((id) => {
+      if (id) {
+        setAddCompanyIndustryId(id);
+        setAddCompanyModalRequested(false);
+      }
+    });
+  }, [addCompanyModalRequested, industries, addCompanyIndustryId, setAddCompanyModalRequested, addIndustry]);
 
   const selected = industries
     .flatMap((i) => i.companies)
@@ -232,12 +296,23 @@ export function BoardView() {
   const handleAddCompanySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!addCompanyIndustryId || !newCompanyName.trim() || !newCompanyRole.trim()) return;
-    addCompany(addCompanyIndustryId, newCompanyName.trim(), newCompanyRole.trim(), newCompanyLocation.trim() || null, newCompanySalary.trim() || null);
+    const template = newCompanyTemplateId ? (profile.templates ?? []).find((t) => t.id === newCompanyTemplateId) : null;
+    addCompany(
+      addCompanyIndustryId,
+      newCompanyName.trim(),
+      newCompanyRole.trim(),
+      newCompanyLocation.trim() || null,
+      newCompanySalary.trim() || null,
+      undefined,
+      undefined,
+      template ? { subject: template.subject, body: template.body } : undefined
+    );
     setAddCompanyIndustryId(null);
     setNewCompanyName("");
     setNewCompanyRole("");
     setNewCompanyLocation("");
     setNewCompanySalary("");
+    setNewCompanyTemplateId("");
     showToast("Company added");
   };
 
@@ -255,14 +330,80 @@ export function BoardView() {
     <div className="dashboard-body flex flex-1 overflow-hidden">
       {/* Sidebar - match original */}
       <aside className="sidebar relative flex w-[280px] shrink-0 flex-col overflow-hidden border-r border-[var(--border)] bg-[var(--surface)]">
-        <button
-          type="button"
-          className="sidebar-toggle absolute right-[-12px] top-1/2 z-20 flex h-6 w-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-[var(--border2)] bg-[var(--surface2)] transition-colors hover:bg-[var(--surface3)]"
-          title="Toggle sidebar"
-        >
-          <ChevronDown className="h-3 w-3 stroke-[var(--text-muted)]" />
-        </button>
-        <div className="sidebar-header shrink-0 border-b border-[var(--border)] px-4 pb-3 pt-4">
+        <div className="sidebar-header shrink-0 border-b border-[var(--border)] px-4 pb-3 pt-4 space-y-2">
+          <form
+            className="quick-add flex gap-1.5"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const raw = quickAddInput.trim();
+              if (!raw) return;
+              setQuickAddLoading(true);
+              try {
+                let industryId = industries[0]?.id;
+                if (!industryId) {
+                  industryId = await addIndustry("Uncategorised", "📋");
+                }
+                if (!industryId) {
+                  setToast("Could not create industry");
+                  setQuickAddLoading(false);
+                  return;
+                }
+                const isUrl = /^https?:\/\//i.test(raw) || (raw.includes(".") && raw.includes("/"));
+                if (isUrl && token) {
+                  const res = await fetchWithAuth("/api/parse-jd", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url: raw }),
+                    token,
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (res.ok) {
+                    addCompany(
+                      industryId,
+                      data.companyName || "New Company",
+                      data.role || "",
+                      null,
+                      null,
+                      data.jdText || null,
+                      undefined
+                    );
+                    setToast("Company added from URL");
+                  } else {
+                    setToast(data.error || "Failed to parse URL");
+                  }
+                } else if (isUrl && !token) {
+                  setToast("Sign in to add from URL");
+                } else {
+                  addCompany(industryId, raw, "", null, null);
+                  setToast("Company added");
+                }
+                setQuickAddInput("");
+              } catch {
+                setToast("Something went wrong");
+              } finally {
+                setQuickAddLoading(false);
+              }
+            }}
+            aria-label="Quick add company"
+          >
+            <label className="sr-only" htmlFor="quick-add-input">Add company: type name or paste job URL, then Enter or click +</label>
+            <input
+              id="quick-add-input"
+              type="text"
+              name="quickAdd"
+              autoComplete="off"
+              placeholder="Add company (name or URL)"
+              value={quickAddInput}
+              onChange={(e) => setQuickAddInput(e.target.value)}
+              className="flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface2)] py-2 px-3 text-[13px] text-[var(--text)] outline-none placeholder:text-[var(--text-dim)] focus:border-[var(--border2)]"
+              disabled={quickAddLoading}
+              aria-describedby="quick-add-hint"
+            />
+            <span id="quick-add-hint" className="sr-only">Press Enter or click + to add to first group. Paste a job URL when signed in to add with details.</span>
+            <Button type="submit" size="sm" className="shrink-0 rounded-lg h-[34px] px-3" disabled={quickAddLoading} aria-label="Add company">
+              {quickAddLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+            </Button>
+          </form>
           <div className="search-wrap relative">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 stroke-[var(--text-dim)]" />
             <input
@@ -273,7 +414,7 @@ export function BoardView() {
           </div>
         </div>
         <div className="sidebar-scroll flex-1 overflow-y-auto p-2">
-          {industries.map((ind) => (
+          {filteredIndustries.map((ind) => (
             <div key={ind.id} className={cn("industry-group mb-1", ind.open && "open")}>
               <button
                 type="button"
@@ -300,35 +441,43 @@ export function BoardView() {
                   ind.open ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
                 )}
               >
-                {ind.companies.map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => setSelectedId(c.id)}
-                    className={cn(
-                      "company-item relative flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
-                      selectedId === c.id
-                        ? "bg-[var(--surface3)] before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:rounded-full before:bg-[var(--accent)] before:content-['']"
-                        : "hover:bg-[var(--surface2)]"
-                    )}
-                  >
-                    <span
+                {ind.companies.map((c) => {
+                  const appliedAt = c.status === "applied" && c.applied_at ? new Date(c.applied_at).getTime() : 0;
+                  const daysSinceApplied = appliedAt ? (now - appliedAt) / day : 0;
+                  const followUpAmber = daysSinceApplied >= 8 && daysSinceApplied < 14;
+                  const followUpBadge = daysSinceApplied >= 14 && daysSinceApplied < 30;
+                  const considerClosing = daysSinceApplied >= 30;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedId(c.id)}
                       className={cn(
-                        "status-dot h-2 w-2 shrink-0 rounded-full",
-                        statusDotClass[c.status] ?? "bg-[var(--text-dim)]"
+                        "company-item relative flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
+                        selectedId === c.id
+                          ? "bg-[var(--surface3)] before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:rounded-full before:bg-[var(--accent)] before:content-['']"
+                          : "hover:bg-[var(--surface2)]"
                       )}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="company-name truncate text-[13px] font-normal text-[var(--text)]">
-                        {c.name}
+                    >
+                      <span
+                        className={cn(
+                          "status-dot h-2 w-2 shrink-0 rounded-full",
+                          considerClosing && c.status === "applied" ? "bg-[var(--text-dim)]" : followUpAmber && c.status === "applied" ? "bg-[var(--amber)]" : statusDotClass[c.status] ?? "bg-[var(--text-dim)]"
+                        )}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="company-name flex items-center gap-1 truncate text-[13px] font-normal text-[var(--text)]">
+                          <span className="truncate">{c.name}</span>
+                          {followUpBadge && <span className="shrink-0 text-[9px] font-medium text-[var(--amber)]" title="14+ days since applied">Follow up?</span>}
+                          {considerClosing && <span className="shrink-0 text-[9px] text-[var(--text-dim)]" title="30+ days">Consider closing</span>}
+                        </div>
+                        <div className="company-role truncate text-[11px] text-[var(--text-dim)] leading-snug">
+                          {c.role}{c.salary ? ` · ${c.salary}` : ""}
+                        </div>
                       </div>
-                      <div className="company-role text-[11px] text-[var(--text-dim)] leading-snug">
-                        {c.role}
-                        {c.salary ? ` · ${c.salary}` : ""}
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
                 <button
                   type="button"
                   onClick={() => setAddCompanyIndustryId(ind.id)}
@@ -340,6 +489,15 @@ export function BoardView() {
               </div>
             </div>
           ))}
+          {filterStatus && (
+            <button
+              type="button"
+              onClick={() => setFilterStatus(null)}
+              className="mt-2 w-full rounded-lg border border-[var(--border2)] py-1.5 text-xs text-[var(--text-dim)] hover:bg-[var(--surface2)]"
+            >
+              Clear filter
+            </button>
+          )}
         </div>
         <div className="sidebar-footer shrink-0 border-t border-[var(--border)] px-4 py-3">
           <button
@@ -355,6 +513,23 @@ export function BoardView() {
 
       {/* Main content */}
       <div className="main-content flex flex-1 flex-col overflow-hidden bg-[var(--bg)]">
+        <div className="progress-stats shrink-0 flex flex-wrap items-center gap-2 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2">
+          <button
+            type="button"
+            onClick={() => setFilterStatus(null)}
+            className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors", !filterStatus ? "bg-[var(--accent-glow)] text-[var(--accent)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}
+          >
+            All {progressStats.tracked}
+          </button>
+          <button type="button" onClick={() => setFilterStatus("draft")} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors", filterStatus === "draft" ? "bg-[var(--surface3)] text-[var(--text)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Draft {progressStats.draft}</button>
+          <button type="button" onClick={() => setFilterStatus("applied")} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors", filterStatus === "applied" ? "bg-[var(--blue-dim)] text-[var(--blue)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Applied {progressStats.applied}</button>
+          <button type="button" onClick={() => setFilterStatus("screening")} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", filterStatus === "screening" ? "bg-[var(--amber-dim)] text-[var(--amber)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Interviews {progressStats.interviews}</button>
+          <button type="button" onClick={() => setFilterStatus("offer")} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", filterStatus === "offer" ? "bg-[var(--green-dim)] text-[var(--green)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Offer {progressStats.offer}</button>
+          <span className="text-[11px] text-[var(--text-dim)]">Response {progressStats.responseRate}%</span>
+          {progressStats.followUpDue > 0 && (
+            <button type="button" onClick={() => setFilterStatus("followup")} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", filterStatus === "followup" ? "bg-[var(--amber-dim)] text-[var(--amber)]" : "bg-[var(--amber-dim)]/80 text-[var(--amber)] hover:opacity-90")}>Follow-up {progressStats.followUpDue}</button>
+          )}
+        </div>
         {!selected ? (
           <div className="empty-state flex flex-1 flex-col items-center justify-center gap-3 text-[var(--text-dim)] px-4 text-center">
             <svg
@@ -405,6 +580,7 @@ export function BoardView() {
             setNewCompanyRole("");
             setNewCompanyLocation("");
             setNewCompanySalary("");
+            setNewCompanyTemplateId("");
           }}
         >
           <div
@@ -417,6 +593,19 @@ export function BoardView() {
               {industries.find((i) => i.id === addCompanyIndustryId)?.name}
             </p>
             <form onSubmit={handleAddCompanySubmit} className="space-y-4">
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-dim)]">Apply a template? (optional)</span>
+                <select
+                  value={newCompanyTemplateId}
+                  onChange={(e) => setNewCompanyTemplateId(e.target.value)}
+                  className="w-full rounded-lg border border-[var(--border2)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]"
+                >
+                  <option value="">None</option>
+                  {(profile.templates ?? []).map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
               <label className="block">
                 <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-dim)]">Company name</span>
                 <Input
@@ -467,6 +656,7 @@ export function BoardView() {
                     setNewCompanyRole("");
                     setNewCompanyLocation("");
                     setNewCompanySalary("");
+                    setNewCompanyTemplateId("");
                   }}
                 >
                   Cancel
@@ -509,20 +699,22 @@ export function BoardView() {
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-dim)]">Emoji</span>
-                <div className="flex gap-2">
-                  {["💻", "🎨", "📊", "🚀", "✦"].map((em) => (
-                    <button
-                      key={em}
-                      type="button"
-                      onClick={() => setNewIndustryEmoji(em)}
-                      className={cn(
-                        "flex h-9 w-9 items-center justify-center rounded-lg border text-lg transition-colors",
-                        newIndustryEmoji === em ? "border-[var(--accent)] bg-[var(--accent-glow)]" : "border-[var(--border)] bg-[var(--surface2)] hover:border-[var(--border2)]"
-                      )}
-                    >
-                      {em}
-                    </button>
-                  ))}
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--border2)] bg-[var(--surface2)] p-2">
+                  <div className="grid grid-cols-10 gap-1">
+                    {INDUSTRY_EMOJIS.map((em) => (
+                      <button
+                        key={em}
+                        type="button"
+                        onClick={() => setNewIndustryEmoji(em)}
+                        className={cn(
+                          "flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-colors hover:bg-[var(--surface3)]",
+                          newIndustryEmoji === em ? "bg-[var(--accent-glow)] ring-1 ring-[var(--accent)]" : ""
+                        )}
+                      >
+                        {em}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </label>
               <div className="flex gap-2 pt-2">
@@ -823,14 +1015,14 @@ function CompanyDetail({
 }: {
   company: Company;
   industries: Industry[];
-  onUpdateCompany: (id: string, patch: Partial<Pick<Company, "name" | "status" | "email_to" | "email_subject" | "email_draft" | "role" | "location" | "salary">>) => void;
+  onUpdateCompany: (id: string, patch: Partial<Pick<Company, "name" | "status" | "email_to" | "email_subject" | "email_draft" | "email_thread" | "saved_tone" | "applied_at" | "jd_text" | "jd_analysis" | "country" | "visa_required" | "work_rights" | "interview_prep" | "role" | "location" | "salary">>) => void;
   onMoveCompanyToIndustry: (companyId: string, fromIndustryId: string, toIndustryId: string) => void;
   onAddNote: (companyId: string, content: string) => void;
   onAddContact: (companyId: string, name: string, role: string | null) => void;
   showToast: (msg: string) => void;
 }) {
   const { token } = useAuth();
-  const { profile } = useProfile();
+  const { profile, setProfile, saveProfile } = useProfile();
   const [companyName, setCompanyName] = useState(company.name);
   const [emailGenerating, setEmailGenerating] = useState(false);
   const [role, setRole] = useState(company.role);
@@ -838,19 +1030,36 @@ function CompanyDetail({
   const [emailTo, setEmailTo] = useState(company.email_to ?? "");
   const [emailSubject, setEmailSubject] = useState(company.email_subject ?? "");
   const [emailBody, setEmailBody] = useState(company.email_draft ?? "");
-  const [emailTone, setEmailTone] = useState<"professional" | "warm" | "bold">("professional");
+  const savedTone = (company.saved_tone as "professional" | "warm" | "bold") || "professional";
+  const [emailTone, setEmailTone] = useState<"professional" | "warm" | "bold">(savedTone);
   const [emailLength, setEmailLength] = useState<"concise" | "standard" | "detailed">("standard");
   const [newNoteContent, setNewNoteContent] = useState("");
   const [newContactName, setNewContactName] = useState("");
   const [newContactRole, setNewContactRole] = useState("");
   const [salary, setSalary] = useState(company.salary ?? "");
-  const [detailTab, setDetailTab] = useState<"email" | "notes" | "contacts" | "files">("email");
+  const [detailTab, setDetailTab] = useState<"email" | "notes" | "contacts" | "files" | "prep">("email");
   const [companyFiles, setCompanyFiles] = useState<Record<string, { folders: CompanyFolder[]; files: CompanyFile[] }>>({});
   const [newFolderName, setNewFolderName] = useState("");
   const [addingFolder, setAddingFolder] = useState(false);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
+  const [viewingThreadId, setViewingThreadId] = useState<string | null>(null);
+  const [subjectLinesGenerating, setSubjectLinesGenerating] = useState(false);
+  const [subjectLines, setSubjectLines] = useState<string[]>([]);
+  const [showAddReceived, setShowAddReceived] = useState(false);
+  const [receivedFrom, setReceivedFrom] = useState("");
+  const [receivedSubject, setReceivedSubject] = useState("");
+  const [receivedBody, setReceivedBody] = useState("");
+  const [receivedDate, setReceivedDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
 
   const currentIndustryId = industries.find((ind) => ind.companies.some((c) => c.id === company.id))?.id ?? "";
+  const emailThread = company.email_thread ?? [];
+  const sortedThread = [...emailThread].sort((a, b) => {
+    const ta = a.receivedAt || a.sentAt || "";
+    const tb = b.receivedAt || b.sentAt || "";
+    return tb.localeCompare(ta);
+  });
 
   useEffect(() => {
     setCompanyName(company.name);
@@ -861,7 +1070,9 @@ function CompanyDetail({
     setEmailBody(company.email_draft ?? "");
     setSalary(company.salary ?? "");
     setCurrentFolderId(null);
-  }, [company.id, company.name, company.role, company.location, company.email_to, company.email_subject, company.email_draft, company.salary]);
+    const tone = (company.saved_tone as "professional" | "warm" | "bold") || "professional";
+    setEmailTone(tone);
+  }, [company.id, company.name, company.role, company.location, company.email_to, company.email_subject, company.email_draft, company.salary, company.saved_tone]);
 
   const currentStageIndex = STAGE_ORDER.indexOf(company.status);
 
@@ -880,7 +1091,13 @@ function CompanyDetail({
           role: company.role,
           tone: emailTone,
           length: emailLength,
-          profile: profile?.name || profile?.narrative ? profile : undefined,
+          profile: profile || undefined,
+          stage: company.status,
+          jdText: company.jd_text || undefined,
+          jdAnalysis: company.jd_analysis || undefined,
+          companyCountry: company.country || undefined,
+          companyVisaRequired: company.visa_required ?? undefined,
+          templateBody: emailBody.trim().length > 80 ? emailBody.trim() : undefined,
         }),
         token,
       });
@@ -917,6 +1134,81 @@ function CompanyDetail({
       throw new Error(data.error || "Refine failed");
     }
   };
+
+  const handleToneChange = (tone: "professional" | "warm" | "bold") => {
+    setEmailTone(tone);
+    onUpdateCompany(company.id, { saved_tone: tone });
+  };
+
+  const handleSendToThread = () => {
+    const subject = emailSubject.trim() || "(No subject)";
+    const body = emailBody.trim();
+    if (!body) {
+      showToast("Add email body first");
+      return;
+    }
+    const wordCount = body.split(/\s+/).filter(Boolean).length;
+    const typeMap: Record<JobStatus, EmailThreadEntry["type"]> = {
+      draft: "cover_letter",
+      applied: "followup",
+      screening: "other",
+      round1: "thankyou",
+      round2: "thankyou",
+      offer: "negotiation",
+      rejected: "other",
+    };
+    const entry: EmailThreadEntry = {
+      id: "e-" + Date.now(),
+      direction: "sent" as const,
+      stage: company.status,
+      type: typeMap[company.status],
+      subject,
+      body,
+      tone: emailTone,
+      sentAt: new Date().toISOString(),
+      wordCount,
+    };
+    const nextThread = [...emailThread, entry];
+    onUpdateCompany(company.id, {
+      email_thread: nextThread,
+      email_subject: "",
+      email_draft: "",
+      ...(company.status === "draft" ? { status: "applied", applied_at: new Date().toISOString() } : {}),
+    });
+    setEmailSubject("");
+    setEmailBody("");
+    showToast("Added to thread");
+  };
+
+  const handleGenerateSubjectLines = async () => {
+    if (!token) return;
+    setSubjectLinesGenerating(true);
+    setSubjectLines([]);
+    try {
+      const res = await fetchWithAuth("/api/email/subject-lines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          companyName: company.name,
+          role: company.role,
+          profile: profile || undefined,
+        }),
+        token,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data.subjectLines)) {
+        setSubjectLines(data.subjectLines);
+        showToast("Pick a subject line below");
+      }
+    } catch {
+      showToast("Failed to generate subject lines");
+    } finally {
+      setSubjectLinesGenerating(false);
+    }
+  };
+
+  const draftWordCount = emailBody.trim().split(/\s+/).filter(Boolean).length;
+  const draftReadMins = Math.max(1, Math.ceil(draftWordCount / 200));
 
   return (
     <div className="company-detail flex h-full flex-col overflow-hidden animate-in slide-in-from-right-4 duration-200">
@@ -962,7 +1254,7 @@ function CompanyDetail({
                 className="min-w-[80px] max-w-[120px] border-none bg-transparent py-0.5 text-[var(--text-dim)] outline-none placeholder:text-[var(--text-dim)] focus:rounded focus:bg-[var(--surface2)] focus:px-1.5"
               />
             </div>
-            <div className="mt-2">
+            <div className="mt-2 flex items-center gap-2">
               <div className="relative inline-block min-w-[140px]">
                 <select
                   value={currentIndustryId}
@@ -1041,7 +1333,7 @@ function CompanyDetail({
               detailTab === "email" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
             )}
           >
-            Cover Letter / Email
+            Comms
           </button>
           <button
             type="button"
@@ -1079,11 +1371,83 @@ function CompanyDetail({
           >
             Files
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={detailTab === "prep"}
+            onClick={() => setDetailTab("prep")}
+            className={cn(
+              "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors",
+              detailTab === "prep" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
+            )}
+          >
+            Interview Prep
+          </button>
         </div>
 
         {detailTab === "email" && (
-        <div className="email-editor flex min-h-0 flex-1 flex-row overflow-hidden pt-0" role="tabpanel">
-          <div className="email-main flex min-w-0 flex-1 flex-col gap-3 overflow-hidden px-7 py-5">
+        <div className="comms-hub flex min-h-0 flex-1 flex-col overflow-hidden pt-0" role="tabpanel">
+          {company.status === "applied" && company.applied_at && (() => {
+            const days = Math.floor((Date.now() - new Date(company.applied_at).getTime()) / (24 * 60 * 60 * 1000));
+            return days >= 10 ? (
+              <div className="comms-followup-banner shrink-0 flex items-center justify-between gap-3 border-b border-[var(--amber)]/30 bg-[var(--amber-dim)]/50 px-4 py-2 text-sm">
+                <span className="text-[var(--text)]">It's been {days} days since you applied. Send a follow-up?</span>
+                <Button size="sm" className="rounded-full bg-[var(--amber)] text-[#1a1508] hover:opacity-90" onClick={() => { setEmailLength("concise"); handleGenerateEmail(); }} disabled={emailGenerating || !token}>
+                  {emailGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Generate follow-up"}
+                </Button>
+              </div>
+            ) : null;
+          })()}
+          <div className="comms-hub flex min-h-0 flex-1 flex-row overflow-hidden">
+          <div className="comms-thread flex w-[280px] shrink-0 flex-col overflow-hidden border-r border-[var(--border)] bg-[var(--surface)]">
+            <div className="comms-thread-header flex items-center justify-between border-b border-[var(--border)] px-3 py-2">
+              <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-dim)]">Comms</span>
+              <button
+                type="button"
+                onClick={() => setShowAddReceived(true)}
+                className="text-[11px] text-[var(--accent)] hover:underline"
+              >
+                + Add received
+              </button>
+            </div>
+            <div className="comms-thread-list flex-1 overflow-y-auto p-2">
+              {sortedThread.length === 0 ? (
+                <p className="px-2 py-4 text-xs text-[var(--text-dim)]">No emails yet. Send one from the drafter or add a received email.</p>
+              ) : (
+                sortedThread.map((e) => {
+                  const isReceived = e.direction === "received";
+                  const dateStr = isReceived ? (e.receivedAt || "") : (e.sentAt || "");
+                  return (
+                    <div key={e.id} className="mb-2 rounded-lg border border-[var(--border2)] bg-[var(--surface2)] p-2">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={cn(
+                          "rounded px-1.5 py-0.5 text-[10px] font-medium",
+                          isReceived ? "bg-[var(--blue-dim)] text-[var(--blue)]" : statusSelectClass[e.stage ?? "draft"]
+                        )}>
+                          {isReceived ? "In" : e.stage === "round1" ? "R1" : e.stage === "round2" ? "R2" : (e.stage ?? "draft").slice(0, 2).toUpperCase()}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-dim)]">{formatDate(dateStr)}</span>
+                      </div>
+                      <div className="mt-1 truncate text-xs font-medium text-[var(--text)]">{e.subject}</div>
+                      {isReceived && e.from && <div className="truncate text-[10px] text-[var(--text-dim)]">From: {e.from}</div>}
+                      <div className="mt-0.5 truncate text-[11px] text-[var(--text-dim)]">{e.body.split("\n")[0] || ""}</div>
+                      <button
+                        type="button"
+                        onClick={() => setViewingThreadId(e.id)}
+                        className="mt-1.5 text-[11px] text-[var(--accent)] hover:underline"
+                      >
+                        View
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+          <div className="comms-drafter flex min-w-0 flex-1 flex-col overflow-hidden px-7 py-5">
+            <div className="comms-stage-header mb-2 text-sm font-medium text-[var(--accent)]">
+              {COMMS_STAGE_LABELS[company.status]}
+            </div>
             <div className="email-field flex items-center gap-3 border-b border-[var(--border)] py-2.5">
               <div className="email-field-label w-10 shrink-0 text-xs uppercase tracking-wider text-[var(--text-dim)]">To</div>
               <Input
@@ -1104,12 +1468,26 @@ function CompanyDetail({
                 onBlur={() => onUpdateCompany(company.id, { email_subject: emailSubject.trim() || null })}
               />
             </div>
+            {subjectLines.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 py-2">
+                {subjectLines.map((line, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => { setEmailSubject(line); setSubjectLines([]); }}
+                    className="rounded-md border border-[var(--border2)] bg-[var(--surface2)] px-2 py-1 text-xs text-[var(--text-muted)] hover:bg-[var(--surface3)] hover:text-[var(--text)]"
+                  >
+                    {line}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="ai-toolbar flex flex-wrap items-center gap-2 border-b border-[var(--border)] py-2">
               {(["professional", "warm", "bold"] as const).map((tone) => (
                 <button
                   key={tone}
                   type="button"
-                  onClick={() => setEmailTone(tone)}
+                  onClick={() => handleToneChange(tone)}
                   className={cn(
                     "ai-chip rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors",
                     emailTone === tone ? "border-[var(--border)] bg-[var(--accent-glow)] text-[var(--accent)]" : "border-[var(--border)] bg-transparent text-[var(--text-muted)] hover:bg-[var(--surface2)] hover:text-[var(--text)]"
@@ -1152,27 +1530,20 @@ function CompanyDetail({
                 onChange={(e) => setEmailBody(e.target.value)}
               />
             </div>
+            <div className="flex shrink-0 items-center justify-between border-t border-[var(--border)] py-2 text-[11px] text-[var(--text-dim)]">
+              <span>{draftWordCount} words · ~{draftReadMins}m read</span>
+            </div>
             <div className="email-actions flex shrink-0 items-center gap-2 border-t border-[var(--border)] py-3.5">
-              <Button
-                size="sm"
-                className="rounded-full bg-[var(--accent)] text-[#1a1508] hover:bg-[var(--accent2)]"
-                onClick={() => {
-                  onUpdateCompany(company.id, { status: "applied" });
-                  showToast("Marked as sent");
-                }}
-              >
+              <Button size="sm" className="rounded-full bg-[var(--accent)] text-[#1a1508] hover:bg-[var(--accent2)]" onClick={handleSendToThread}>
                 <Send className="mr-1.5 h-3.5 w-3.5" />
-                Mark as Sent
+                Send
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 className="rounded-full"
                 onClick={() => {
-                  if (!emailBody.trim()) {
-                    showToast("Nothing to copy");
-                    return;
-                  }
+                  if (!emailBody.trim()) { showToast("Nothing to copy"); return; }
                   navigator.clipboard.writeText(emailBody);
                   showToast("Copied to clipboard");
                 }}
@@ -1184,16 +1555,135 @@ function CompanyDetail({
                 size="sm"
                 variant="outline"
                 className="rounded-full"
-                onClick={() => {
-                  onUpdateCompany(company.id, { email_draft: emailBody });
-                  showToast("Draft saved");
-                }}
+                onClick={() => { onUpdateCompany(company.id, { email_draft: emailBody }); showToast("Draft saved"); }}
               >
                 <Save className="mr-1.5 h-3.5 w-3.5" />
                 Save Draft
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                disabled={!emailBody.trim()}
+                onClick={() => setShowSaveTemplate(true)}
+              >
+                Save as template
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                disabled={subjectLinesGenerating || !token}
+                onClick={handleGenerateSubjectLines}
+              >
+                {subjectLinesGenerating ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : null}
+                Generate 3 subject lines
+              </Button>
             </div>
           </div>
+
+          {viewingThreadId && (() => {
+            const entry = emailThread.find((e) => e.id === viewingThreadId);
+            if (!entry) return null;
+            const isReceived = entry.direction === "received";
+            const dateStr = isReceived ? (entry.receivedAt || "") : (entry.sentAt || "");
+            return (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+                onClick={() => setViewingThreadId(null)}
+              >
+                <div
+                  className="max-h-[80vh] w-full max-w-lg overflow-hidden rounded-xl border border-[var(--border2)] bg-[var(--surface)] p-4 shadow-xl"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">{entry.subject}</div>
+                      {(isReceived && entry.from) && <div className="text-xs text-[var(--text-dim)]">From: {entry.from}</div>}
+                      <div className="text-[11px] text-[var(--text-dim)]">{formatDate(dateStr)}</div>
+                    </div>
+                    <button type="button" onClick={() => setViewingThreadId(null)} className="ml-2 text-[var(--text-dim)] hover:text-[var(--text)]">×</button>
+                  </div>
+                  <div className="mt-2 overflow-y-auto whitespace-pre-wrap text-sm text-[var(--text)]" style={{ maxHeight: "60vh" }}>{entry.body}</div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {showAddReceived && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+              onClick={() => setShowAddReceived(false)}
+            >
+              <div
+                className="w-full max-w-md rounded-xl border border-[var(--border2)] bg-[var(--surface)] p-4 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="mb-3 text-sm font-medium">Add received email</h3>
+                <div className="space-y-2">
+                  <Input placeholder="From (email or name)" value={receivedFrom} onChange={(e) => setReceivedFrom(e.target.value)} className="bg-[var(--surface2)]" />
+                  <Input placeholder="Subject" value={receivedSubject} onChange={(e) => setReceivedSubject(e.target.value)} className="bg-[var(--surface2)]" />
+                  <input type="date" value={receivedDate} onChange={(e) => setReceivedDate(e.target.value)} className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm" />
+                  <textarea placeholder="Body" value={receivedBody} onChange={(e) => setReceivedBody(e.target.value)} rows={6} className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
+                </div>
+                <div className="mt-4 flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setShowAddReceived(false)}>Cancel</Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (!receivedSubject.trim() || !receivedBody.trim()) {
+                        showToast("Subject and body required");
+                        return;
+                      }
+                      const receivedAt = receivedDate ? new Date(receivedDate + "T12:00:00").toISOString() : new Date().toISOString();
+                      const newEntry: EmailThreadEntry = {
+                        id: "e-" + Date.now(),
+                        direction: "received",
+                        subject: receivedSubject.trim(),
+                        body: receivedBody.trim(),
+                        from: receivedFrom.trim() || undefined,
+                        receivedAt,
+                      };
+                      onUpdateCompany(company.id, { email_thread: [...emailThread, newEntry] });
+                      setReceivedFrom(""); setReceivedSubject(""); setReceivedBody(""); setReceivedDate(new Date().toISOString().slice(0, 10));
+                      setShowAddReceived(false);
+                      showToast("Received email added");
+                    }}
+                  >
+                    Add to thread
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showSaveTemplate && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setShowSaveTemplate(false)}>
+              <div className="w-full max-w-sm rounded-xl border border-[var(--border2)] bg-[var(--surface)] p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <h3 className="mb-3 text-sm font-medium">Save as template</h3>
+                <Input placeholder="Template name" value={templateName} onChange={(e) => setTemplateName(e.target.value)} className="mb-3 bg-[var(--surface2)]" />
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => { setShowSaveTemplate(false); setTemplateName(""); }}>Cancel</Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const name = templateName.trim();
+                      if (!name) { showToast("Enter a name"); return; }
+                      const newTemplate = { id: "t-" + Date.now(), name, subject: emailSubject.trim() || undefined, body: emailBody.trim() };
+                      const next = { ...profile, templates: [...(profile.templates ?? []), newTemplate] };
+                      setProfile(next);
+                      saveProfile(next);
+                      setShowSaveTemplate(false);
+                      setTemplateName("");
+                      showToast("Template saved");
+                    }}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <AIInsightsPanel
             company={company}
@@ -1202,6 +1692,7 @@ function CompanyDetail({
             onRefineEmail={handleRefineEmail}
             token={token}
           />
+          </div>
         </div>
         )}
 
@@ -1314,6 +1805,69 @@ function CompanyDetail({
           showToast={showToast}
         />
         )}
+
+        {detailTab === "prep" && (() => {
+          const prep: InterviewPrep = {
+            likelyQuestions: company.interview_prep?.likelyQuestions ?? [],
+            answers: company.interview_prep?.answers ?? [],
+            talkingPoints: company.interview_prep?.talkingPoints ?? [],
+            researchNotes: company.interview_prep?.researchNotes ?? "",
+            questionsToAsk: company.interview_prep?.questionsToAsk ?? [],
+          };
+          const savePrep = (next: InterviewPrep) => onUpdateCompany(company.id, { interview_prep: next });
+          return (
+            <div className="flex flex-1 flex-col overflow-y-auto px-7 py-5" role="tabpanel">
+              <h3 className="mb-3 text-sm font-medium text-[var(--accent)]">Interview Prep</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-dim)]">Likely questions (from JD / experience)</label>
+                  <div className="space-y-1">
+                    {(prep.likelyQuestions ?? []).map((q, i) => (
+                      <div key={i} className="flex gap-2">
+                        <input
+                          value={q}
+                          onChange={(e) => {
+                            const list = [...(prep.likelyQuestions ?? [])];
+                            list[i] = e.target.value;
+                            savePrep({ ...prep, likelyQuestions: list });
+                          }}
+                          className="flex-1 rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm"
+                        />
+                        <Button type="button" variant="outline" size="sm" onClick={() => savePrep({ ...prep, likelyQuestions: (prep.likelyQuestions ?? []).filter((_, j) => j !== i) })}>Remove</Button>
+                      </div>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={() => savePrep({ ...prep, likelyQuestions: [...(prep.likelyQuestions ?? []), ""] })}>+ Add question</Button>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-dim)]">Your answers</label>
+                  <div className="space-y-2">
+                    {(prep.answers ?? []).map((a, i) => (
+                      <div key={i} className="rounded-lg border border-[var(--border2)] bg-[var(--surface2)] p-2">
+                        <input value={a.q} onChange={(e) => { const list = [...(prep.answers ?? [])]; list[i] = { ...list[i], q: e.target.value }; savePrep({ ...prep, answers: list }); }} placeholder="Question" className="mb-1 w-full rounded border border-[var(--border)] bg-transparent px-2 py-1 text-sm" />
+                        <textarea value={a.a} onChange={(e) => { const list = [...(prep.answers ?? [])]; list[i] = { ...list[i], a: e.target.value }; savePrep({ ...prep, answers: list }); }} placeholder="Your answer" rows={2} className="w-full rounded border border-[var(--border)] bg-transparent px-2 py-1 text-sm resize-none" />
+                        <Button type="button" variant="ghost" size="sm" className="mt-1" onClick={() => savePrep({ ...prep, answers: (prep.answers ?? []).filter((_, j) => j !== i) })}>Remove</Button>
+                      </div>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={() => savePrep({ ...prep, answers: [...(prep.answers ?? []), { q: "", a: "" }] })}>+ Add answer</Button>
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-dim)]">Talking points</label>
+                  <textarea value={(prep.talkingPoints ?? []).join("\n")} onChange={(e) => savePrep({ ...prep, talkingPoints: e.target.value.split("\n").filter(Boolean) })} placeholder="One per line" rows={3} className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-dim)]">Company research notes</label>
+                  <textarea value={prep.researchNotes ?? ""} onChange={(e) => savePrep({ ...prep, researchNotes: e.target.value })} placeholder="Notes about the company, team, product..." rows={4} className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-[var(--text-dim)]">Questions to ask them</label>
+                  <textarea value={(prep.questionsToAsk ?? []).join("\n")} onChange={(e) => savePrep({ ...prep, questionsToAsk: e.target.value.split("\n").filter(Boolean) })} placeholder="One per line" rows={3} className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

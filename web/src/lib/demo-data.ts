@@ -106,7 +106,10 @@ export const STATUS_LABELS: Record<JobStatus, string> = {
 };
 
 export type ProfileTimelineItem = {
+  /** Start date (e.g. "2020", "Jan 2020") */
   year: string;
+  /** End date (e.g. "2022", "Present", or empty if current) */
+  endDate?: string;
   type: string;
   title: string;
   sub: string;
@@ -115,6 +118,9 @@ export type ProfileTimelineItem = {
 };
 export type ProfileStrength = { label: string; score: number };
 export type ProfileObservation = { type: string; icon: string; title: string; text: string };
+
+/** Saved email/cover letter template for "Apply a template" when adding companies */
+export type EmailTemplate = { id: string; name: string; subject?: string; body: string };
 
 export type ProfileData = {
   name: string;
@@ -125,6 +131,18 @@ export type ProfileData = {
   timeline: ProfileTimelineItem[];
   strengths: ProfileStrength[];
   observations: ProfileObservation[];
+  /** Work rights / visa (e.g. "Australian citizen", "UK work permit") */
+  workRights?: string;
+  /** Based in (e.g. "Sydney, Australia") */
+  basedIn?: string;
+  /** Open to relocate (e.g. "Yes", "Remote only") */
+  openToRelocate?: string;
+  /** Target countries for roles */
+  targetCountries?: string[];
+  /** Saved email templates (packs) for applying when adding a company */
+  templates?: EmailTemplate[];
+  /** ISO date string when resume was last uploaded; set by server */
+  resumeUploadedAt?: string;
 };
 
 export const DEFAULT_PROFILE: ProfileData = {
@@ -136,6 +154,11 @@ export const DEFAULT_PROFILE: ProfileData = {
   timeline: [],
   strengths: [],
   observations: [],
+  workRights: "",
+  basedIn: "",
+  openToRelocate: "",
+  targetCountries: [],
+  templates: [],
 };
 
 export const PROFILE_DATA: ProfileData = {
@@ -152,6 +175,11 @@ export const PROFILE_DATA: ProfileData = {
     { year: "2020", type: "work", title: "Product Designer", sub: "Atlassian", desc: "Confluence editor redesign, 10M+ users.", highlight: true },
     { year: "2022", type: "work", title: "Senior Product Designer", sub: "Canva", desc: "Team collaboration layer, 40% context-switch reduction.", highlight: true },
   ],
+  workRights: "",
+  basedIn: "Sydney, Australia",
+  openToRelocate: "Yes, for the right role",
+  targetCountries: [],
+  templates: [],
   strengths: [
     { label: "Systems thinking", score: 92 },
     { label: "Visual craft", score: 87 },

@@ -27,6 +27,7 @@ function mergeProfile(data: unknown): ProfileData {
           t && typeof t === "object"
             ? {
                 year: String((t as Record<string, unknown>).year ?? ""),
+                endDate: typeof (t as Record<string, unknown>).endDate === "string" ? (t as Record<string, unknown>).endDate : undefined,
                 type: String((t as Record<string, unknown>).type ?? "work"),
                 title: String((t as Record<string, unknown>).title ?? ""),
                 sub: String((t as Record<string, unknown>).sub ?? ""),
@@ -55,6 +56,14 @@ function mergeProfile(data: unknown): ProfileData {
             : { type: "", icon: "", title: "", text: "" }
         )
       : DEFAULT_PROFILE.observations,
+    workRights: typeof o.workRights === "string" ? o.workRights : DEFAULT_PROFILE.workRights ?? "",
+    basedIn: typeof o.basedIn === "string" ? o.basedIn : DEFAULT_PROFILE.basedIn ?? "",
+    openToRelocate: typeof o.openToRelocate === "string" ? o.openToRelocate : DEFAULT_PROFILE.openToRelocate ?? "",
+    targetCountries: Array.isArray(o.targetCountries) ? o.targetCountries.filter((c): c is string => typeof c === "string") : (DEFAULT_PROFILE.targetCountries ?? []),
+    templates: Array.isArray(o.templates)
+      ? o.templates.map((t) => t && typeof t === "object" ? { id: String((t as Record<string, unknown>).id ?? ""), name: String((t as Record<string, unknown>).name ?? ""), subject: typeof (t as Record<string, unknown>).subject === "string" ? (t as Record<string, unknown>).subject : undefined, body: String((t as Record<string, unknown>).body ?? "") } : { id: "", name: "", body: "" }).filter((t) => t.id && t.name)
+      : (DEFAULT_PROFILE.templates ?? []),
+    resumeUploadedAt: typeof o.resumeUploadedAt === "string" ? o.resumeUploadedAt : undefined,
   };
 }
 

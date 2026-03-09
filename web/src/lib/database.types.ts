@@ -7,6 +7,27 @@ export type JobStatus =
   | "offer"
   | "rejected";
 
+export type EmailThreadType =
+  | "cover_letter"
+  | "followup"
+  | "thankyou"
+  | "negotiation"
+  | "other";
+
+export interface EmailThreadEntry {
+  id: string;
+  direction?: "sent" | "received";
+  stage?: JobStatus;
+  type?: EmailThreadType;
+  subject: string;
+  body: string;
+  tone?: string;
+  sentAt?: string;
+  receivedAt?: string;
+  wordCount?: number;
+  from?: string;
+}
+
 export interface Industry {
   id: string;
   name: string;
@@ -14,6 +35,22 @@ export interface Industry {
   open: boolean;
   order: number;
   companies: Company[];
+}
+
+export interface JdAnalysis {
+  matchScore: number;
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  suggestedAngle: string;
+  redFlags: string[];
+}
+
+export interface InterviewPrep {
+  likelyQuestions?: string[];
+  answers?: { q: string; a: string }[];
+  talkingPoints?: string[];
+  researchNotes?: string;
+  questionsToAsk?: string[];
 }
 
 export interface Company {
@@ -28,6 +65,15 @@ export interface Company {
   email_to: string | null;
   email_subject: string | null;
   email_draft: string | null;
+  email_thread?: EmailThreadEntry[];
+  saved_tone?: string | null;
+  applied_at?: string | null;
+  jd_text?: string | null;
+  jd_analysis?: JdAnalysis | null;
+  country?: string | null;
+  visa_required?: boolean | null;
+  work_rights?: string | null;
+  interview_prep?: InterviewPrep | null;
   contacts?: Contact[];
   notes?: Note[];
 }

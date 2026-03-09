@@ -11,9 +11,54 @@ import {
 import { DEMO_INDUSTRIES } from "@/lib/demo-data";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchWithAuth } from "@/lib/api";
-import type { Company, Industry } from "@/lib/database.types";
+import type { Company, Industry, EmailThreadEntry } from "@/lib/database.types";
+
+function normalizeInterviewPrep(v: unknown): import("@/lib/database.types").InterviewPrep | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  return {
+    likelyQuestions: Array.isArray(o.likelyQuestions) ? o.likelyQuestions.filter((x): x is string => typeof x === "string") : undefined,
+    answers: Array.isArray(o.answers) ? o.answers.map((a) => (a && typeof a === "object" ? { q: String((a as Record<string, unknown>).q ?? ""), a: String((a as Record<string, unknown>).a ?? "") } : { q: "", a: "" })) : undefined,
+    talkingPoints: Array.isArray(o.talkingPoints) ? o.talkingPoints.filter((x): x is string => typeof x === "string") : undefined,
+    researchNotes: typeof o.researchNotes === "string" ? o.researchNotes : undefined,
+    questionsToAsk: Array.isArray(o.questionsToAsk) ? o.questionsToAsk.filter((x): x is string => typeof x === "string") : undefined,
+  };
+}
+
+function normalizeThreadEntry(t: unknown): EmailThreadEntry | null {
+  if (!t || typeof t !== "object") return null;
+  const o = t as Record<string, unknown>;
+  const direction = (o.direction as "sent" | "received") || "sent";
+  return {
+    id: String(o.id ?? ""),
+    direction,
+    stage: (o.stage as Company["status"]) ?? "draft",
+    type: (o.type as EmailThreadEntry["type"]) ?? "cover_letter",
+    subject: String(o.subject ?? ""),
+    body: String(o.body ?? ""),
+    tone: String(o.tone ?? "professional"),
+    sentAt: String(o.sentAt ?? ""),
+    receivedAt: o.receivedAt != null ? String(o.receivedAt) : undefined,
+    wordCount: o.wordCount != null ? Number(o.wordCount) : undefined,
+    from: o.from != null ? String(o.from) : undefined,
+  };
+}
 
 function normalizeCompany(c: Record<string, unknown>): Company {
+  const rawThread = c.emailThread as unknown[] | undefined;
+  const emailThread = Array.isArray(rawThread)
+    ? rawThread.map(normalizeThreadEntry).filter((e): e is EmailThreadEntry => e !== null)
+    : [];
+  const rawJd = c.jdAnalysis as Record<string, unknown> | undefined;
+  const jd_analysis = rawJd && typeof rawJd === "object" && rawJd.matchScore != null
+    ? {
+        matchScore: Number(rawJd.matchScore) || 0,
+        matchedKeywords: Array.isArray(rawJd.matchedKeywords) ? rawJd.matchedKeywords.filter((k): k is string => typeof k === "string") : [],
+        missingKeywords: Array.isArray(rawJd.missingKeywords) ? rawJd.missingKeywords.filter((k): k is string => typeof k === "string") : [],
+        suggestedAngle: String(rawJd.suggestedAngle ?? ""),
+        redFlags: Array.isArray(rawJd.redFlags) ? rawJd.redFlags.filter((r): r is string => typeof r === "string") : [],
+      }
+    : null;
   return {
     id: c.id as string,
     name: c.name as string,
@@ -25,6 +70,15 @@ function normalizeCompany(c: Record<string, unknown>): Company {
     email_to: (c.emailTo as string) ?? null,
     email_subject: (c.emailSubject as string) ?? null,
     email_draft: (c.emailDraft as string) ?? null,
+    email_thread: emailThread,
+    saved_tone: (c.savedTone as string) ?? null,
+    applied_at: c.appliedAt != null ? new Date(c.appliedAt as string).toISOString() : null,
+    jd_text: (c.jdText as string) ?? null,
+    jd_analysis,
+    country: (c.country as string) ?? null,
+    visa_required: c.visaRequired != null ? Boolean(c.visaRequired) : null,
+    work_rights: (c.workRights as string) ?? null,
+    interview_prep: normalizeInterviewPrep(c.interviewPrep),
     contacts: ((c.contacts as Record<string, unknown>[]) ?? []).map((ct) => ({
       id: ct.id as string,
       company_id: ct.companyId as string,
@@ -60,6 +114,15 @@ type CompanyPatch = Partial<
     | "email_to"
     | "email_subject"
     | "email_draft"
+    | "email_thread"
+    | "saved_tone"
+    | "applied_at"
+    | "jd_text"
+    | "jd_analysis"
+    | "country"
+    | "visa_required"
+    | "work_rights"
+    | "interview_prep"
     | "role"
     | "location"
     | "salary"
@@ -68,6 +131,7 @@ type CompanyPatch = Partial<
 
 interface IndustriesContextValue {
   industries: Industry[];
+  loading: boolean;
   setIndustries: React.Dispatch<React.SetStateAction<Industry[]>>;
   updateCompany: (companyId: string, patch: CompanyPatch) => void;
   moveCompanyToIndustry: (companyId: string, fromIndustryId: string, toIndustryId: string) => void;
@@ -78,9 +142,12 @@ interface IndustriesContextValue {
     name: string,
     role: string,
     location: string | null,
-    salary: string | null
+    salary: string | null,
+    jdText?: string | null,
+    jdAnalysis?: import("@/lib/database.types").JdAnalysis | null,
+    template?: { subject?: string; body: string }
   ) => void;
-  addIndustry: (name: string, emoji: string) => void;
+  addIndustry: (name: string, emoji: string) => Promise<string | undefined>;
   openAddCompanyModal: () => void;
   addCompanyModalRequested: boolean;
   setAddCompanyModalRequested: (v: boolean) => void;
@@ -136,6 +203,8 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
         ),
       }))
     );
+    // Optimistic update so UI responds immediately (status dropdown/buttons)
+    doUpdate();
     if (token) {
       try {
         const body: Record<string, unknown> = {};
@@ -147,18 +216,31 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
         if (patch.email_to != null) body.emailTo = patch.email_to;
         if (patch.email_subject != null) body.emailSubject = patch.email_subject;
         if (patch.email_draft != null) body.emailDraft = patch.email_draft;
+        if (patch.email_thread != null) body.emailThread = patch.email_thread;
+        if (patch.saved_tone != null) body.savedTone = patch.saved_tone;
+        if (patch.applied_at != null) body.appliedAt = patch.applied_at;
+        if (patch.jd_text != null) body.jdText = patch.jd_text;
+        if (patch.jd_analysis != null) body.jdAnalysis = patch.jd_analysis;
+        if (patch.country != null) body.country = patch.country;
+        if (patch.visa_required != null) body.visaRequired = patch.visa_required;
+        if (patch.work_rights != null) body.workRights = patch.work_rights;
+        if (patch.interview_prep != null) body.interviewPrep = patch.interview_prep;
         const res = await fetchWithAuth(`/api/applications/companies/${companyId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
           token,
         });
-        if (res.ok) doUpdate();
+        if (!res.ok) {
+          // Revert on failure: refetch industries to restore server state
+          const data = await fetchWithAuth("/api/applications/industries", { token }).then((r) => r.json().catch(() => null));
+          if (Array.isArray(data)) setIndustries(data.map(normalizeIndustry));
+        }
       } catch {
-        doUpdate();
+        // On network error, refetch to sync with server
+        const data = await fetchWithAuth("/api/applications/industries", { token }).then((r) => r.json().catch(() => null));
+        if (Array.isArray(data)) setIndustries(data.map(normalizeIndustry));
       }
-    } else {
-      doUpdate();
     }
   }, [token]);
 
@@ -286,7 +368,10 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
       name: string,
       role: string,
       location: string | null,
-      salary: string | null
+      salary: string | null,
+      jdText?: string | null,
+      jdAnalysis?: import("@/lib/database.types").JdAnalysis | null,
+      template?: { subject?: string; body: string }
     ) => {
       const company: Company = {
         id: `c-${Date.now()}`,
@@ -297,34 +382,46 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
         status: "draft",
         logo: null,
         email_to: null,
-        email_subject: null,
-        email_draft: null,
+        email_subject: template?.subject ?? null,
+        email_draft: template?.body ?? null,
+        email_thread: [],
+        saved_tone: null,
+        applied_at: null,
+        jd_text: jdText ?? null,
+        jd_analysis: jdAnalysis ?? null,
+        country: null,
+        visa_required: null,
+        work_rights: null,
+        interview_prep: null,
         contacts: [],
         notes: [],
       };
-      const doAdd = (c: Company) => setIndustries((prev) =>
-        prev.map((ind) =>
-          ind.id === industryId
-            ? { ...ind, companies: [...ind.companies, c] }
-            : ind
-        )
-      );
+      const doAdd = (c: Company) => setIndustries((prev) => {
+        const ind = prev.find((i) => i.id === industryId);
+        if (ind) return prev.map((i) => (i.id === industryId ? { ...i, companies: [...i.companies, c] } : i));
+        return [...prev, { id: industryId, name: "Uncategorised", emoji: "📋", open: true, order: prev.length, companies: [c] }];
+      });
       if (token) {
         try {
+          const body: Record<string, unknown> = {
+            name: company.name,
+            role: company.role,
+            location: company.location,
+            salary: company.salary,
+          };
+          if (jdText !== undefined) body.jdText = jdText;
+          if (jdAnalysis !== undefined) body.jdAnalysis = jdAnalysis;
           const res = await fetchWithAuth(`/api/applications/industries/${industryId}/companies`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: company.name,
-              role: company.role,
-              location: company.location,
-              salary: company.salary,
-            }),
+            body: JSON.stringify(body),
             token,
           });
           const data = await res.json().catch(() => ({}));
           if (res.ok && data.id) {
-            doAdd(normalizeCompany(data));
+            const normalized = normalizeCompany(data);
+            doAdd({ ...normalized, email_subject: template?.subject ?? null, email_draft: template?.body ?? null });
+            if (template) await updateCompany(data.id, { email_subject: template.subject ?? null, email_draft: template.body });
           } else {
             doAdd(company);
           }
@@ -335,10 +432,10 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
         doAdd(company);
       }
     },
-    [token]
+    [token, updateCompany]
   );
 
-  const addIndustry = useCallback(async (name: string, emoji: string) => {
+  const addIndustry = useCallback(async (name: string, emoji: string): Promise<string | undefined> => {
     const industry: Industry = {
       id: `ind-${Date.now()}`,
       name: name.trim(),
@@ -359,19 +456,22 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.id) {
           doAdd(normalizeIndustry({ ...data, companies: [] }));
-        } else {
-          doAdd(industry);
+          return data.id;
         }
+        doAdd(industry);
+        return industry.id;
       } catch {
         doAdd(industry);
+        return industry.id;
       }
-    } else {
-      doAdd(industry);
     }
+    doAdd(industry);
+    return industry.id;
   }, [token, industries.length]);
 
   const value: IndustriesContextValue = {
     industries,
+    loading,
     setIndustries,
     updateCompany,
     moveCompanyToIndustry,

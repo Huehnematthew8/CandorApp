@@ -72,6 +72,25 @@ export function TrackerView() {
   const [sortCol, setSortCol] = useState<SortCol>("company");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [toast, setToast] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const selectAll = () => {
+    if (selectedIds.size === rows.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(rows.map((r) => r.id)));
+  };
+  const bulkSetStatus = (status: JobStatus) => {
+    selectedIds.forEach((id) => updateCompany(id, { status }));
+    setSelectedIds(new Set());
+    showToast(`Updated ${selectedIds.size} to ${STATUS_LABELS[status]}`);
+  };
 
   const rows = useMemo(() => {
     let r = getRowsFromIndustries(industries);
@@ -157,10 +176,22 @@ export function TrackerView() {
         </span>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[var(--candor-border)] bg-[var(--candor-surface2)] px-3 py-2">
+          <span className="text-xs text-[var(--candor-muted)]">{selectedIds.size} selected</span>
+          <button type="button" onClick={() => bulkSetStatus("applied")} className="rounded-full bg-[var(--blue)]/20 px-3 py-1.5 text-xs font-medium text-[var(--blue)] hover:bg-[var(--blue)]/30">Move to Applied</button>
+          <button type="button" onClick={() => bulkSetStatus("rejected")} className="rounded-full bg-[var(--red)]/20 px-3 py-1.5 text-xs font-medium text-[var(--red)] hover:bg-[var(--red)]/30">Archive</button>
+          <button type="button" onClick={() => setSelectedIds(new Set())} className="rounded-full border border-[var(--candor-border)] px-3 py-1.5 text-xs text-[var(--candor-muted)] hover:bg-[var(--candor-surface3)]">Clear</button>
+        </div>
+      )}
+
       <div className="flex-1 overflow-auto rounded-xl border border-[var(--candor-border)]">
         <table className="w-full border-collapse text-sm">
           <thead className="sticky top-0 z-10 bg-[var(--candor-surface)]">
             <tr>
+              <th className="w-10 border-b border-[var(--candor-border)] px-2 py-3 text-left text-xs font-semibold uppercase text-[var(--candor-dim)]">
+                <input type="checkbox" checked={rows.length > 0 && selectedIds.size === rows.length} onChange={selectAll} aria-label="Select all" className="rounded border-[var(--candor-border)]" />
+              </th>
               <th className="w-10 border-b border-[var(--candor-border)] px-2 py-3 text-left text-xs font-semibold uppercase text-[var(--candor-dim)]" aria-label="Open" />
               {[
                 ["company", "Company"],
@@ -186,7 +217,7 @@ export function TrackerView() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-sm text-[var(--candor-dim)]">
+                <td colSpan={10} className="py-12 text-center text-sm text-[var(--candor-dim)]">
                   No jobs match your filter
                 </td>
               </tr>
@@ -194,8 +225,11 @@ export function TrackerView() {
               rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="border-b border-[var(--candor-border)] transition-colors hover:bg-[var(--candor-surface)]"
+                  className={cn("border-b border-[var(--candor-border)] transition-colors hover:bg-[var(--candor-surface)]", selectedIds.has(row.id) && "bg-[var(--candor-surface2)]")}
                 >
+                  <td className="w-10 px-2 py-2">
+                    <input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => toggleSelect(row.id)} aria-label={`Select ${row.company}`} className="rounded border-[var(--candor-border)]" onClick={(e) => e.stopPropagation()} />
+                  </td>
                   <td className="w-10 px-2 py-2">
                     <Link
                       href={`/dashboard?company=${row.id}`}
