@@ -1,4 +1,4 @@
-export const RESUME_DONE_KEY = "candor_resume_done";
+const RESUME_DONE_KEY = "candor_resume_done";
 
 export function hasCompletedResumeOnboarding(): boolean {
   if (typeof window === "undefined") return false;

@@ -3,11 +3,10 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 const { v4: uuidv4 } = require("uuid");
-const { PrismaClient } = require("@prisma/client");
+const { prisma } = require("../lib/db");
 const { auth, JWT_SECRET } = require("../middleware/auth");
 
 const router = express.Router();
-const prisma = new PrismaClient();
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const ACCESS_TOKEN_EXPIRY = "15m";

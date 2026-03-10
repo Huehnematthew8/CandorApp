@@ -62,7 +62,7 @@ export default function OnboardingResumePage() {
           router.push("/dashboard");
           router.refresh();
         }}
-        className="mt-6 text-sm text-[var(--text-dim)] underline hover:text-[var(--text-muted)]"
+        className="mt-6 rounded-md border border-[var(--border2)] bg-transparent px-3 py-1.5 text-sm font-medium text-[var(--text-dim)] transition-colors hover:bg-[var(--surface2)] hover:text-[var(--text-muted)]"
       >
         Skip for now →
       </button>

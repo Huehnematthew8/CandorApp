@@ -11,7 +11,7 @@ import {
 import { DEMO_INDUSTRIES } from "@/lib/demo-data";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchWithAuth } from "@/lib/api";
-import type { Company, Industry, EmailThreadEntry } from "@/lib/database.types";
+import type { Company, Industry, EmailThreadEntry, ActivityEntry, ActivityFeedItem } from "@/lib/database.types";
 
 function normalizeInterviewPrep(v: unknown): import("@/lib/database.types").InterviewPrep | null {
   if (!v || typeof v !== "object") return null;
@@ -31,6 +31,7 @@ function normalizeThreadEntry(t: unknown): EmailThreadEntry | null {
   const direction = (o.direction as "sent" | "received") || "sent";
   return {
     id: String(o.id ?? ""),
+    kind: "email",
     direction,
     stage: (o.stage as Company["status"]) ?? "draft",
     type: (o.type as EmailThreadEntry["type"]) ?? "cover_letter",
@@ -44,10 +45,33 @@ function normalizeThreadEntry(t: unknown): EmailThreadEntry | null {
   };
 }
 
+function normalizeActivityEntry(t: unknown): ActivityEntry | null {
+  if (!t || typeof t !== "object") return null;
+  const o = t as Record<string, unknown>;
+  if (o.kind !== "activity") return null;
+  const activityType = (o.activityType as ActivityEntry["activityType"]) || "other";
+  return {
+    id: String(o.id ?? ""),
+    kind: "activity",
+    activityType,
+    occurredAt: String(o.occurredAt ?? new Date().toISOString()),
+    title: String(o.title ?? ""),
+    notes: o.notes != null ? String(o.notes) : null,
+    contactId: o.contactId != null ? String(o.contactId) : null,
+  };
+}
+
+function normalizeActivityFeedItem(t: unknown): ActivityFeedItem | null {
+  if (!t || typeof t !== "object") return null;
+  const o = t as Record<string, unknown>;
+  if (o.kind === "activity") return normalizeActivityEntry(t);
+  return normalizeThreadEntry(t);
+}
+
 function normalizeCompany(c: Record<string, unknown>): Company {
   const rawThread = c.emailThread as unknown[] | undefined;
-  const emailThread = Array.isArray(rawThread)
-    ? rawThread.map(normalizeThreadEntry).filter((e): e is EmailThreadEntry => e !== null)
+  const emailThread: ActivityFeedItem[] = Array.isArray(rawThread)
+    ? rawThread.map(normalizeActivityFeedItem).filter((e): e is ActivityFeedItem => e !== null)
     : [];
   const rawJd = c.jdAnalysis as Record<string, unknown> | undefined;
   const jd_analysis = rawJd && typeof rawJd === "object" && rawJd.matchScore != null
@@ -74,6 +98,7 @@ function normalizeCompany(c: Record<string, unknown>): Company {
     saved_tone: (c.savedTone as string) ?? null,
     applied_at: c.appliedAt != null ? new Date(c.appliedAt as string).toISOString() : null,
     jd_text: (c.jdText as string) ?? null,
+    job_url: (c.jobUrl as string) ?? null,
     jd_analysis,
     country: (c.country as string) ?? null,
     visa_required: c.visaRequired != null ? Boolean(c.visaRequired) : null,
@@ -118,6 +143,7 @@ type CompanyPatch = Partial<
     | "saved_tone"
     | "applied_at"
     | "jd_text"
+    | "job_url"
     | "jd_analysis"
     | "country"
     | "visa_required"
@@ -145,9 +171,12 @@ interface IndustriesContextValue {
     salary: string | null,
     jdText?: string | null,
     jdAnalysis?: import("@/lib/database.types").JdAnalysis | null,
-    template?: { subject?: string; body: string }
+    template?: { subject?: string; body: string },
+    jobUrl?: string | null
   ) => void;
   addIndustry: (name: string, emoji: string) => Promise<string | undefined>;
+  deleteCompany: (companyId: string) => void;
+  deleteIndustry: (industryId: string) => void;
   openAddCompanyModal: () => void;
   addCompanyModalRequested: boolean;
   setAddCompanyModalRequested: (v: boolean) => void;
@@ -161,6 +190,15 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
   const [addCompanyModalRequested, setAddCompanyModalRequested] = useState(false);
   const [loading, setLoading] = useState(!!token);
   const openAddCompanyModal = useCallback(() => setAddCompanyModalRequested(true), []);
+
+  const refetchIndustries = useCallback(() => {
+    if (!token) return;
+    fetchWithAuth("/api/applications/industries", { token })
+      .then((r) => r.json().catch(() => null))
+      .then((data: Record<string, unknown>[] | null) => {
+        if (Array.isArray(data)) setIndustries(data.map(normalizeIndustry));
+      });
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
@@ -220,6 +258,7 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
         if (patch.saved_tone != null) body.savedTone = patch.saved_tone;
         if (patch.applied_at != null) body.appliedAt = patch.applied_at;
         if (patch.jd_text != null) body.jdText = patch.jd_text;
+        if (patch.job_url != null) body.jobUrl = patch.job_url;
         if (patch.jd_analysis != null) body.jdAnalysis = patch.jd_analysis;
         if (patch.country != null) body.country = patch.country;
         if (patch.visa_required != null) body.visaRequired = patch.visa_required;
@@ -231,18 +270,12 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify(body),
           token,
         });
-        if (!res.ok) {
-          // Revert on failure: refetch industries to restore server state
-          const data = await fetchWithAuth("/api/applications/industries", { token }).then((r) => r.json().catch(() => null));
-          if (Array.isArray(data)) setIndustries(data.map(normalizeIndustry));
-        }
+        if (!res.ok) refetchIndustries();
       } catch {
-        // On network error, refetch to sync with server
-        const data = await fetchWithAuth("/api/applications/industries", { token }).then((r) => r.json().catch(() => null));
-        if (Array.isArray(data)) setIndustries(data.map(normalizeIndustry));
+        refetchIndustries();
       }
     }
-  }, [token]);
+  }, [token, refetchIndustries]);
 
   const moveCompanyToIndustry = useCallback(
     (companyId: string, fromIndustryId: string, toIndustryId: string) => {
@@ -371,7 +404,8 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
       salary: string | null,
       jdText?: string | null,
       jdAnalysis?: import("@/lib/database.types").JdAnalysis | null,
-      template?: { subject?: string; body: string }
+      template?: { subject?: string; body: string },
+      jobUrl?: string | null
     ) => {
       const company: Company = {
         id: `c-${Date.now()}`,
@@ -388,6 +422,7 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
         saved_tone: null,
         applied_at: null,
         jd_text: jdText ?? null,
+        job_url: jobUrl ?? null,
         jd_analysis: jdAnalysis ?? null,
         country: null,
         visa_required: null,
@@ -411,6 +446,7 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
           };
           if (jdText !== undefined) body.jdText = jdText;
           if (jdAnalysis !== undefined) body.jdAnalysis = jdAnalysis;
+          if (jobUrl !== undefined) body.jobUrl = jobUrl;
           const res = await fetchWithAuth(`/api/applications/industries/${industryId}/companies`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -469,6 +505,37 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
     return industry.id;
   }, [token, industries.length]);
 
+  const deleteCompany = useCallback(
+    (companyId: string) => {
+      setIndustries((prev) =>
+        prev.map((ind) => ({
+          ...ind,
+          companies: ind.companies.filter((c) => c.id !== companyId),
+        }))
+      );
+      if (token) {
+        fetchWithAuth(`/api/applications/companies/${companyId}`, {
+          method: "DELETE",
+          token,
+        }).catch(refetchIndustries);
+      }
+    },
+    [token, refetchIndustries]
+  );
+
+  const deleteIndustry = useCallback(
+    (industryId: string) => {
+      setIndustries((prev) => prev.filter((ind) => ind.id !== industryId));
+      if (token) {
+        fetchWithAuth(`/api/applications/industries/${industryId}`, {
+          method: "DELETE",
+          token,
+        }).catch(refetchIndustries);
+      }
+    },
+    [token, refetchIndustries]
+  );
+
   const value: IndustriesContextValue = {
     industries,
     loading,
@@ -479,6 +546,8 @@ export function IndustriesProvider({ children }: { children: ReactNode }) {
     addContact,
     addCompany,
     addIndustry,
+    deleteCompany,
+    deleteIndustry,
     openAddCompanyModal,
     addCompanyModalRequested,
     setAddCompanyModalRequested,

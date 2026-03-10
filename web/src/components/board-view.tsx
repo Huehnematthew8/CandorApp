@@ -2,45 +2,19 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { ChevronDown, Search, Plus, Send, Copy, Save, FileText, Mail, Loader2, Folder, File, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronLeft, Search, Plus, Send, Copy, Save, FileText, Mail, Loader2, Folder, File, Trash2, Phone, Video, MessageCircle, CircleDot, Reply, Clipboard } from "lucide-react";
 import { useIndustriesContext } from "@/lib/IndustriesContext";
 import { useAuth } from "@/lib/AuthContext";
 import { useProfile } from "@/lib/ProfileContext";
 import { fetchWithAuth } from "@/lib/api";
-import type { Company, Industry, JobStatus, CompanyFolder, CompanyFile, EmailThreadEntry, InterviewPrep } from "@/lib/database.types";
+import type { Company, Industry, JobStatus, CompanyFolder, CompanyFile, EmailThreadEntry, ActivityEntry, ActivityFeedItem, ActivityType, InterviewPrep } from "@/lib/database.types";
+import { statusDotClass, statusSelectClass, statusChevronClass, STATUS_ORDER, STATUS_LABELS } from "@/lib/demo-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, formatFileSize } from "@/lib/utils";
 
-const statusDotClass: Record<string, string> = {
-  draft: "bg-[var(--text-dim)]",
-  applied: "bg-[var(--blue)]",
-  screening: "bg-[var(--amber)]",
-  round1: "bg-[var(--purple)]",
-  round2: "bg-[var(--accent)]",
-  offer: "bg-[var(--green)] animate-[pulse_2s_ease_infinite]",
-  rejected: "bg-[var(--red)]",
-};
-
-const statusSelectClass: Record<JobStatus, string> = {
-  draft: "border-[var(--border2)] bg-[var(--surface2)] text-[var(--text-muted)]",
-  applied: "border-[var(--blue)]/30 bg-[var(--blue-dim)] text-[var(--blue)]",
-  screening: "border-[var(--amber)]/30 bg-[var(--amber-dim)] text-[var(--amber)]",
-  round1: "border-[var(--purple)]/30 bg-[var(--purple-dim)] text-[var(--purple)]",
-  round2: "border-[var(--accent)]/30 bg-[var(--accent-glow)] text-[var(--accent)]",
-  offer: "border-[var(--green)]/30 bg-[var(--green-dim)] text-[var(--green)]",
-  rejected: "border-[var(--red)]/30 bg-[var(--red-dim)] text-[var(--red)]",
-};
-
-const statusChevronClass: Record<JobStatus, string> = {
-  draft: "text-[var(--text-muted)]",
-  applied: "text-[var(--blue)]",
-  screening: "text-[var(--amber)]",
-  round1: "text-[var(--purple)]",
-  round2: "text-[var(--accent)]",
-  offer: "text-[var(--green)]",
-  rejected: "text-[var(--red)]",
-};
+/** Timeline steps (excludes terminal "rejected") */
+const STAGE_ORDER: JobStatus[] = STATUS_ORDER.filter((s) => s !== "rejected");
 
 const INDUSTRY_EMOJIS = [
   "💻", "📱", "🖥️", "⚙️", "🔧", "🤖", "📡", "💡", "🔬", "🧪",
@@ -61,142 +35,111 @@ const COMMS_STAGE_LABELS: Record<JobStatus, string> = {
   rejected: "Keep the door open",
 };
 
-function getAISuggestions(company: Company): { label: string; text: string }[] {
-  const name = (company.name ?? "").toLowerCase();
-  const role = (company.role ?? "").toLowerCase();
-  if (name.includes("notion")) {
-    return [
-      { label: "HIGHLIGHT", text: "Mention your collaboration redesign — directly relevant to Notion\'s team-first product direction." },
-      { label: "ANGLE", text: "Position yourself as a systems thinker who operates at the intersection of IA and scalable UI." },
-      { label: "CULTURE FIT", text: "Notion values builders. Reference any side projects or personal tools you\'ve created." },
-    ];
-  }
-  if (name.includes("linear")) {
-    return [
-      { label: "TONE", text: "Linear values precision. Keep the email tight and purposeful — no fluff." },
-      { label: "HOOK", text: "Open with a specific thing you love about Linear\'s interface — it signals you\'re a real user, not just applying." },
-    ];
-  }
-  return [
-    { label: "TIP", text: "Research recent company announcements or product launches to personalise your opening." },
-    { label: "EXPERIENCE MATCH", text: `Your experience in ${role || "this space"} is highly relevant — lead with it.` },
-    { label: "CULTURE FIT", text: "Briefly mention what draws you to the company; it shows you\'ve done your research." },
-  ];
+const COMMS_STAGE_PLACEHOLDERS: Record<JobStatus, string> = {
+  draft: "Cover letter — use Generate to draft from your story and the job description.",
+  applied: "Follow-up email — reference your application and add one clear value point.",
+  screening: "Pre-interview note — confirm logistics or ask one genuine question.",
+  round1: "Thank you after the interview — reference something specific from the conversation.",
+  round2: "Thank you after this round — reiterate interest and fit.",
+  offer: "Negotiation — acknowledge the offer and state your ask with brief reasoning.",
+  rejected: "Gracious reply — thank them and ask to be considered for future roles.",
+};
+
+const IMPROVE_OPTIONS: { type: "refine"; label: string; prompt: string }[] = [
+  { type: "refine", label: "More company-specific", prompt: "Make it more specific to the company culture" },
+  { type: "refine", label: "Stronger experience hook", prompt: "Highlight my most relevant experience more strongly" },
+  { type: "refine", label: "Stronger opening", prompt: "Add a compelling opening line" },
+  { type: "refine", label: "Confident close", prompt: "Make the closing more confident and action-oriented" },
+];
+
+const FILTER_PILL_BASE = "rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors";
+const DETAIL_TAB_BASE = "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors";
+function detailTabActiveClass(active: boolean) {
+  return active ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]";
 }
 
-function AIInsightsPanel({
-  company,
-  showToast,
-  currentEmail,
-  onRefineEmail,
-  token,
-}: {
-  company: Company;
-  showToast: (msg: string) => void;
-  currentEmail: string;
-  onRefineEmail: (prompt: string) => Promise<void>;
-  token: string | null;
-}) {
-  const [loading, setLoading] = useState(true);
-  const [refining, setRefining] = useState(false);
-  const [suggestions, setSuggestions] = useState<{ label: string; text: string }[]>([]);
-
-  useEffect(() => {
-    setLoading(true);
-    const t = setTimeout(() => {
-      setSuggestions(getAISuggestions(company));
-      setLoading(false);
-    }, 900);
-    return () => clearTimeout(t);
-  }, [company.id]);
-
-  const quickPrompts: { label: string; prompt: string }[] = [
-    { label: "More company-specific", prompt: "Make it more specific to the company culture" },
-    { label: "Stronger experience hook", prompt: "Highlight my most relevant experience more strongly" },
-    { label: "Stronger opening", prompt: "Add a compelling opening line" },
-    { label: "Confident close", prompt: "Make the closing more confident and action-oriented" },
-  ];
-
-  const handleQuickEdit = async (prompt: string) => {
-    if (!token) {
-      showToast("Sign in to use AI edits");
-      return;
-    }
-    if (!currentEmail.trim()) {
-      showToast("Generate or write an email first");
-      return;
-    }
-    setRefining(true);
-    try {
-      await onRefineEmail(prompt);
-      showToast("Email updated");
-    } catch {
-      showToast("Refine failed. Check API and ANTHROPIC_API_KEY.");
-    } finally {
-      setRefining(false);
-    }
+function getProgressStats(allCompanies: Company[]) {
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  const applied = allCompanies.filter((c) => c.status === "applied");
+  const appliedWithDate = applied.filter((c) => c.applied_at);
+  const followUpDue = appliedWithDate.filter((c) => {
+    const appliedAt = new Date(c.applied_at!).getTime();
+    return (now - appliedAt) / day >= 8;
+  });
+  const inProcess = allCompanies.filter((c) => ["screening", "round1", "round2"].includes(c.status));
+  return {
+    tracked: allCompanies.length,
+    draft: allCompanies.filter((c) => c.status === "draft").length,
+    applied: applied.length,
+    inProcess: inProcess.length,
+    offer: allCompanies.filter((c) => c.status === "offer").length,
+    rejected: allCompanies.filter((c) => c.status === "rejected").length,
+    followUpDue: followUpDue.length,
   };
+}
 
-  return (
-    <div className="ai-side-panel flex w-[240px] shrink-0 flex-col overflow-hidden border-l border-[var(--border)] bg-[var(--surface)]">
-      <div className="ai-panel-header shrink-0 border-b border-[var(--border)] px-4 py-4">
-        <div className="ai-panel-title flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-          AI Insights
-          <span className="ai-badge rounded border border-[var(--accent)]/20 bg-[var(--accent-glow)] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[var(--accent)]">LIVE</span>
-        </div>
-      </div>
-      <div className="ai-panel-scroll flex-1 overflow-y-auto p-3 [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
-        {loading ? (
-          <div className="ai-generating flex flex-col gap-1.5 px-1 py-2">
-            {[80, 95, 60].map((w, i) => (
-              <div
-                key={i}
-                className="skeleton-line h-2.5 rounded bg-[var(--surface2)]"
-                style={{ width: `${w}%` }}
-              />
-            ))}
-          </div>
-        ) : (
-          suggestions.map((s, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => {
-                showToast("Suggestion applied to draft");
-              }}
-              className="ai-suggestion mb-2 block w-full cursor-pointer rounded-lg border border-[var(--border)] bg-[var(--surface2)] p-2.5 text-left text-xs leading-snug text-[var(--text-muted)] transition-all hover:border-[var(--border2)] hover:bg-[var(--surface3)] hover:text-[var(--text)]"
-            >
-              <div className="ai-suggestion-label mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--accent)]">{s.label}</div>
-              {s.text}
-            </button>
-          ))
-        )}
-      </div>
-      <div className="ai-quick-prompts shrink-0 border-t border-[var(--border)] p-3">
-        <div className="ai-quick-label mb-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-dim)]">Quick Edits</div>
-        {quickPrompts.map(({ label, prompt }, i) => (
-          <button
-            key={i}
-            type="button"
-            disabled={refining || !token}
-            onClick={() => handleQuickEdit(prompt)}
-            className="ai-prompt-btn mb-1 block w-full rounded-md border border-transparent px-2.5 py-1.5 text-left text-[11px] leading-snug text-[var(--text-muted)] transition-colors hover:bg-[var(--surface2)] hover:border-[var(--border)] hover:text-[var(--text)] disabled:opacity-50"
-          >
-            → {label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+function getFilteredIndustries(
+  industries: Industry[],
+  filterStatus: JobStatus | "followup" | "inprocess" | null,
+  search: string
+): Industry[] {
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+  const inProcessStatuses: JobStatus[] = ["screening", "round1", "round2"];
+  let base: Industry[] =
+    filterStatus === "followup"
+      ? industries
+          .map((ind) => ({
+            ...ind,
+            companies: ind.companies.filter(
+              (c) =>
+                c.status === "applied" &&
+                c.applied_at &&
+                (now - new Date(c.applied_at).getTime()) / day >= 8,
+            ),
+          }))
+          .filter((ind) => ind.companies.length > 0)
+      : filterStatus === "inprocess"
+        ? industries
+            .map((ind) => ({
+              ...ind,
+              companies: ind.companies.filter((c) => inProcessStatuses.includes(c.status)),
+            }))
+            .filter((ind) => ind.companies.length > 0)
+        : filterStatus
+          ? industries
+              .map((ind) => ({
+                ...ind,
+                companies: ind.companies.filter((c) => c.status === filterStatus),
+              }))
+              .filter((ind) => ind.companies.length > 0)
+          : industries;
+
+  const q = search.trim().toLowerCase();
+  if (!q) return base;
+
+  return base
+    .map((ind) => ({
+      ...ind,
+      companies: ind.companies.filter((c) => {
+        const name = c.name?.toLowerCase() ?? "";
+        const role = c.role?.toLowerCase() ?? "";
+        const loc = c.location?.toLowerCase() ?? "";
+        return name.includes(q) || role.includes(q) || loc.includes(q);
+      }),
+    }))
+    .filter((ind) => ind.companies.length > 0);
 }
 
 export function BoardView() {
-  const { industries, setIndustries, updateCompany, moveCompanyToIndustry, addNote, addContact, addCompany, addIndustry, addCompanyModalRequested, setAddCompanyModalRequested } = useIndustriesContext();
+  const { industries, setIndustries, updateCompany, moveCompanyToIndustry, addNote, addContact, addCompany, addIndustry, deleteCompany, deleteIndustry, addCompanyModalRequested, setAddCompanyModalRequested } = useIndustriesContext();
   const { token } = useAuth();
   const { profile } = useProfile();
   const searchParams = useSearchParams();
   const companyFromUrl = searchParams.get("company");
   const [selectedId, setSelectedId] = useState<string | null>(companyFromUrl);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (companyFromUrl && industries.some((i) => i.companies.some((c) => c.id === companyFromUrl))) {
@@ -215,39 +158,11 @@ export function BoardView() {
   const [newIndustryEmoji, setNewIndustryEmoji] = useState("💻");
   const [quickAddInput, setQuickAddInput] = useState("");
   const [quickAddLoading, setQuickAddLoading] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<JobStatus | "followup" | null>(null);
-  const [newCompanyTemplateId, setNewCompanyTemplateId] = useState<string | "">("");
+  const [filterStatus, setFilterStatus] = useState<JobStatus | "followup" | "inprocess" | null>(null);
 
   const allCompanies = industries.flatMap((i) => i.companies);
-  const now = Date.now();
-  const day = 24 * 60 * 60 * 1000;
-  const progressStats = (() => {
-    const applied = allCompanies.filter((c) => c.status === "applied");
-    const appliedWithDate = applied.filter((c) => c.applied_at);
-    const followUpDue = appliedWithDate.filter((c) => {
-      const appliedAt = new Date(c.applied_at!).getTime();
-      const days = (now - appliedAt) / day;
-      return days >= 8;
-    });
-    const interviews = allCompanies.filter((c) => ["screening", "round1", "round2"].includes(c.status));
-    const responseRate = applied.length > 0 ? Math.round((interviews.length + allCompanies.filter((c) => c.status === "offer").length) / applied.length * 100) : 0;
-    return {
-      tracked: allCompanies.length,
-      draft: allCompanies.filter((c) => c.status === "draft").length,
-      applied: applied.length,
-      interviews: interviews.length,
-      offer: allCompanies.filter((c) => c.status === "offer").length,
-      rejected: allCompanies.filter((c) => c.status === "rejected").length,
-      responseRate,
-      followUpDue: followUpDue.length,
-    };
-  })();
-
-  const filteredIndustries = filterStatus === "followup"
-    ? industries.map((ind) => ({ ...ind, companies: ind.companies.filter((c) => c.status === "applied" && c.applied_at && (now - new Date(c.applied_at).getTime()) / day >= 8) })).filter((ind) => ind.companies.length > 0)
-    : filterStatus
-      ? industries.map((ind) => ({ ...ind, companies: ind.companies.filter((c) => c.status === filterStatus) })).filter((ind) => ind.companies.length > 0)
-      : industries;
+  const progressStats = getProgressStats(allCompanies);
+  const filteredIndustries = getFilteredIndustries(industries, filterStatus, search);
 
   useEffect(() => {
     if (!addCompanyModalRequested || addCompanyIndustryId) return;
@@ -296,23 +211,18 @@ export function BoardView() {
   const handleAddCompanySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!addCompanyIndustryId || !newCompanyName.trim() || !newCompanyRole.trim()) return;
-    const template = newCompanyTemplateId ? (profile.templates ?? []).find((t) => t.id === newCompanyTemplateId) : null;
     addCompany(
       addCompanyIndustryId,
       newCompanyName.trim(),
       newCompanyRole.trim(),
       newCompanyLocation.trim() || null,
-      newCompanySalary.trim() || null,
-      undefined,
-      undefined,
-      template ? { subject: template.subject, body: template.body } : undefined
+      newCompanySalary.trim() || null
     );
     setAddCompanyIndustryId(null);
     setNewCompanyName("");
     setNewCompanyRole("");
     setNewCompanyLocation("");
     setNewCompanySalary("");
-    setNewCompanyTemplateId("");
     showToast("Company added");
   };
 
@@ -409,32 +319,55 @@ export function BoardView() {
             <input
               type="text"
               placeholder="Search companies..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="sidebar-search w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] py-2 pl-8 pr-3 text-[13px] text-[var(--text)] outline-none placeholder:text-[var(--text-dim)] focus:border-[var(--border2)]"
             />
           </div>
         </div>
         <div className="sidebar-scroll flex-1 overflow-y-auto p-2">
           {filteredIndustries.map((ind) => (
-            <div key={ind.id} className={cn("industry-group mb-1", ind.open && "open")}>
-              <button
-                type="button"
-                onClick={() => toggleOpen(ind.id)}
-                className="industry-header flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-[var(--surface2)]"
-              >
-                <ChevronDown
-                  className={cn(
-                    "h-3.5 w-3.5 shrink-0 transition-transform stroke-[#a0a0b0] hover:stroke-[var(--text)]",
-                    !ind.open && "rotate-[-90deg]",
-                    ind.open && "stroke-[var(--text)]"
-                  )}
-                />
-                <span className="industry-label flex-1 text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
-                  {ind.emoji} {ind.name}
-                </span>
-                <span className="industry-count rounded-full bg-[var(--surface3)] px-1.5 py-0.5 text-[11px] text-[var(--text-dim)]">
-                  {ind.companies.length}
-                </span>
-              </button>
+            <div key={ind.id} className={cn("industry-group mb-1 group/ind", ind.open && "open")}>
+              <div className="industry-header flex w-full items-center gap-1 rounded-lg px-2 py-1.5 transition-colors hover:bg-[var(--surface2)]">
+                <button
+                  type="button"
+                  onClick={() => toggleOpen(ind.id)}
+                  className="flex flex-1 min-w-0 items-center gap-2 text-left"
+                >
+                  <ChevronDown
+                    className={cn(
+                      "h-3.5 w-3.5 shrink-0 transition-transform stroke-[#a0a0b0] hover:stroke-[var(--text)]",
+                      !ind.open && "rotate-[-90deg]",
+                      ind.open && "stroke-[var(--text)]"
+                    )}
+                  />
+                  <span className="industry-label flex-1 truncate text-xs font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                    {ind.emoji} {ind.name}
+                  </span>
+                  <span className="industry-count shrink-0 rounded-full bg-[var(--surface3)] px-1.5 py-0.5 text-[11px] text-[var(--text-dim)]">
+                    {ind.companies.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const msg = ind.companies.length > 0
+                      ? `Delete "${ind.name}" and all ${ind.companies.length} job${ind.companies.length === 1 ? "" : "s"}?`
+                      : `Delete "${ind.name}"?`;
+                    if (window.confirm(msg)) {
+                      if (selectedId && ind.companies.some((c) => c.id === selectedId)) setSelectedId(null);
+                      if (addCompanyIndustryId === ind.id) setAddCompanyIndustryId(null);
+                      deleteIndustry(ind.id);
+                      setToast("Group deleted");
+                    }
+                  }}
+                  className="shrink-0 rounded p-1 text-[var(--text-dim)] opacity-0 transition-opacity hover:bg-[var(--surface3)] hover:text-[var(--red)] group-hover/ind:opacity-100 focus:opacity-100"
+                  aria-label={`Delete group ${ind.name}`}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
               <div
                 className={cn(
                   "company-list overflow-hidden pl-2 transition-all",
@@ -448,34 +381,34 @@ export function BoardView() {
                   const followUpBadge = daysSinceApplied >= 14 && daysSinceApplied < 30;
                   const considerClosing = daysSinceApplied >= 30;
                   return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setSelectedId(c.id)}
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelectedId(c.id)}
+                    className={cn(
+                      "company-item relative flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
+                      selectedId === c.id
+                        ? "bg-[var(--surface3)] before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:rounded-full before:bg-[var(--accent)] before:content-['']"
+                        : "hover:bg-[var(--surface2)]"
+                    )}
+                  >
+                    <span
                       className={cn(
-                        "company-item relative flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
-                        selectedId === c.id
-                          ? "bg-[var(--surface3)] before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:rounded-full before:bg-[var(--accent)] before:content-['']"
-                          : "hover:bg-[var(--surface2)]"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "status-dot h-2 w-2 shrink-0 rounded-full",
+                        "status-dot h-2 w-2 shrink-0 rounded-full",
                           considerClosing && c.status === "applied" ? "bg-[var(--text-dim)]" : followUpAmber && c.status === "applied" ? "bg-[var(--amber)]" : statusDotClass[c.status] ?? "bg-[var(--text-dim)]"
-                        )}
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="company-name flex items-center gap-1 truncate text-[13px] font-normal text-[var(--text)]">
-                          <span className="truncate">{c.name}</span>
+                      )}
+                    />
+                    <div className="min-w-0 flex-1">
+                        <div className="company-name flex items-center gap-1 min-w-0 flex-1" title={`${c.name} · ${c.role}`}>
+                          <span className="truncate text-[13px] font-normal text-[var(--text)]">{c.name}</span>
                           {followUpBadge && <span className="shrink-0 text-[9px] font-medium text-[var(--amber)]" title="14+ days since applied">Follow up?</span>}
                           {considerClosing && <span className="shrink-0 text-[9px] text-[var(--text-dim)]" title="30+ days">Consider closing</span>}
-                        </div>
-                        <div className="company-role truncate text-[11px] text-[var(--text-dim)] leading-snug">
-                          {c.role}{c.salary ? ` · ${c.salary}` : ""}
-                        </div>
                       </div>
-                    </button>
+                        <div className="company-role truncate text-[11px] text-[var(--text-dim)] leading-snug" title={c.role + (c.salary ? ` · ${c.salary}` : "")}>
+                          {c.role}{c.salary ? ` · ${c.salary}` : ""}
+                      </div>
+                    </div>
+                  </button>
                   );
                 })}
                 <button
@@ -514,20 +447,16 @@ export function BoardView() {
       {/* Main content */}
       <div className="main-content flex flex-1 flex-col overflow-hidden bg-[var(--bg)]">
         <div className="progress-stats shrink-0 flex flex-wrap items-center gap-2 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2">
-          <button
-            type="button"
-            onClick={() => setFilterStatus(null)}
-            className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors", !filterStatus ? "bg-[var(--accent-glow)] text-[var(--accent)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}
-          >
+          <button type="button" onClick={() => setFilterStatus(null)} className={cn(FILTER_PILL_BASE, !filterStatus ? "bg-[var(--accent-glow)] text-[var(--accent)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>
             All {progressStats.tracked}
           </button>
-          <button type="button" onClick={() => setFilterStatus("draft")} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors", filterStatus === "draft" ? "bg-[var(--surface3)] text-[var(--text)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Draft {progressStats.draft}</button>
-          <button type="button" onClick={() => setFilterStatus("applied")} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors", filterStatus === "applied" ? "bg-[var(--blue-dim)] text-[var(--blue)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Applied {progressStats.applied}</button>
-          <button type="button" onClick={() => setFilterStatus("screening")} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", filterStatus === "screening" ? "bg-[var(--amber-dim)] text-[var(--amber)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Interviews {progressStats.interviews}</button>
-          <button type="button" onClick={() => setFilterStatus("offer")} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", filterStatus === "offer" ? "bg-[var(--green-dim)] text-[var(--green)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Offer {progressStats.offer}</button>
-          <span className="text-[11px] text-[var(--text-dim)]">Response {progressStats.responseRate}%</span>
+          <button type="button" onClick={() => setFilterStatus("draft")} className={cn(FILTER_PILL_BASE, filterStatus === "draft" ? "bg-[var(--surface3)] text-[var(--text)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Draft {progressStats.draft}</button>
+          <button type="button" onClick={() => setFilterStatus("applied")} className={cn(FILTER_PILL_BASE, filterStatus === "applied" ? "bg-[var(--blue-dim)] text-[var(--blue)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Applied {progressStats.applied}</button>
+          <button type="button" onClick={() => setFilterStatus("inprocess")} className={cn(FILTER_PILL_BASE, filterStatus === "inprocess" ? "bg-[var(--amber-dim)] text-[var(--amber)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>In process {progressStats.inProcess}</button>
+          <button type="button" onClick={() => setFilterStatus("offer")} className={cn(FILTER_PILL_BASE, filterStatus === "offer" ? "bg-[var(--green-dim)] text-[var(--green)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Offer {progressStats.offer}</button>
+          <button type="button" onClick={() => setFilterStatus("rejected")} className={cn(FILTER_PILL_BASE, filterStatus === "rejected" ? "bg-[var(--red-dim)] text-[var(--red)]" : "bg-[var(--surface2)] text-[var(--text-dim)] hover:text-[var(--text)]")}>Archived {progressStats.rejected}</button>
           {progressStats.followUpDue > 0 && (
-            <button type="button" onClick={() => setFilterStatus("followup")} className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", filterStatus === "followup" ? "bg-[var(--amber-dim)] text-[var(--amber)]" : "bg-[var(--amber-dim)]/80 text-[var(--amber)] hover:opacity-90")}>Follow-up {progressStats.followUpDue}</button>
+            <button type="button" onClick={() => setFilterStatus("followup")} className={cn(FILTER_PILL_BASE, filterStatus === "followup" ? "bg-[var(--amber-dim)] text-[var(--amber)]" : "bg-[var(--amber-dim)]/80 text-[var(--amber)] hover:opacity-90")}>Follow-up {progressStats.followUpDue}</button>
           )}
         </div>
         {!selected ? (
@@ -555,6 +484,10 @@ export function BoardView() {
             onMoveCompanyToIndustry={moveCompanyToIndustry}
             onAddNote={handleAddNote}
             onAddContact={handleAddContact}
+            onDeleteCompany={() => {
+              deleteCompany(selected.id);
+              setSelectedId(null);
+            }}
             showToast={showToast}
           />
         )}
@@ -580,7 +513,6 @@ export function BoardView() {
             setNewCompanyRole("");
             setNewCompanyLocation("");
             setNewCompanySalary("");
-            setNewCompanyTemplateId("");
           }}
         >
           <div
@@ -593,19 +525,6 @@ export function BoardView() {
               {industries.find((i) => i.id === addCompanyIndustryId)?.name}
             </p>
             <form onSubmit={handleAddCompanySubmit} className="space-y-4">
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-dim)]">Apply a template? (optional)</span>
-                <select
-                  value={newCompanyTemplateId}
-                  onChange={(e) => setNewCompanyTemplateId(e.target.value)}
-                  className="w-full rounded-lg border border-[var(--border2)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)]"
-                >
-                  <option value="">None</option>
-                  {(profile.templates ?? []).map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </label>
               <label className="block">
                 <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-dim)]">Company name</span>
                 <Input
@@ -656,7 +575,6 @@ export function BoardView() {
                     setNewCompanyRole("");
                     setNewCompanyLocation("");
                     setNewCompanySalary("");
-                    setNewCompanyTemplateId("");
                   }}
                 >
                   Cancel
@@ -699,7 +617,7 @@ export function BoardView() {
               </label>
               <label className="block">
                 <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-[var(--text-dim)]">Emoji</span>
-                <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--border2)] bg-[var(--surface2)] p-2">
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-[var(--border2)] bg-[var(--surface2)] p-2 scrollbar-themed [scrollbar-color:var(--border)_transparent] [scrollbar-width:thin]">
                   <div className="grid grid-cols-10 gap-1">
                     {INDUSTRY_EMOJIS.map((em) => (
                       <button
@@ -744,22 +662,6 @@ export function BoardView() {
   );
 }
 
-const STAGE_ORDER: JobStatus[] = ["draft", "applied", "screening", "round1", "round2", "offer"];
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDate(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  } catch {
-    return iso;
-  }
-}
 
 function FilesTabPanel({
   companyId,
@@ -1011,6 +913,7 @@ function CompanyDetail({
   onMoveCompanyToIndustry,
   onAddNote,
   onAddContact,
+  onDeleteCompany,
   showToast,
 }: {
   company: Company;
@@ -1019,6 +922,7 @@ function CompanyDetail({
   onMoveCompanyToIndustry: (companyId: string, fromIndustryId: string, toIndustryId: string) => void;
   onAddNote: (companyId: string, content: string) => void;
   onAddContact: (companyId: string, name: string, role: string | null) => void;
+  onDeleteCompany: () => void;
   showToast: (msg: string) => void;
 }) {
   const { token } = useAuth();
@@ -1037,7 +941,10 @@ function CompanyDetail({
   const [newContactName, setNewContactName] = useState("");
   const [newContactRole, setNewContactRole] = useState("");
   const [salary, setSalary] = useState(company.salary ?? "");
-  const [detailTab, setDetailTab] = useState<"email" | "notes" | "contacts" | "files" | "prep">("email");
+  const [detailTab, setDetailTab] = useState<"email" | "jd" | "notes" | "contacts" | "files" | "prep">("email");
+  const [jdUrlInput, setJdUrlInput] = useState("");
+  const [jdFetching, setJdFetching] = useState(false);
+  const [jdAnalyzing, setJdAnalyzing] = useState(false);
   const [companyFiles, setCompanyFiles] = useState<Record<string, { folders: CompanyFolder[]; files: CompanyFile[] }>>({});
   const [newFolderName, setNewFolderName] = useState("");
   const [addingFolder, setAddingFolder] = useState(false);
@@ -1045,19 +952,34 @@ function CompanyDetail({
   const [viewingThreadId, setViewingThreadId] = useState<string | null>(null);
   const [subjectLinesGenerating, setSubjectLinesGenerating] = useState(false);
   const [subjectLines, setSubjectLines] = useState<string[]>([]);
-  const [showAddReceived, setShowAddReceived] = useState(false);
-  const [receivedFrom, setReceivedFrom] = useState("");
-  const [receivedSubject, setReceivedSubject] = useState("");
-  const [receivedBody, setReceivedBody] = useState("");
-  const [receivedDate, setReceivedDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [showGotReplyModal, setShowGotReplyModal] = useState(false);
+  const [gotReplySummary, setGotReplySummary] = useState("");
+  const [gotReplyDate, setGotReplyDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [showPasteEmailModal, setShowPasteEmailModal] = useState(false);
+  const [pasteEmailText, setPasteEmailText] = useState("");
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [logActivityType, setLogActivityType] = useState<ActivityType>("call");
+  const [logDate, setLogDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [logTitle, setLogTitle] = useState("");
+  const [logNotes, setLogNotes] = useState("");
+  const [logContactId, setLogContactId] = useState<string | null>(null);
+  const [viewingActivityId, setViewingActivityId] = useState<string | null>(null);
+  const [showLogMenu, setShowLogMenu] = useState(false);
+  const [activityPanelCollapsed, setActivityPanelCollapsed] = useState(false);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const [showEmailUndo, setShowEmailUndo] = useState(false);
+  const [improveMenuOpen, setImproveMenuOpen] = useState(false);
+  const [refiningEmail, setRefiningEmail] = useState(false);
+  const previousEmailBodyRef = useRef("");
 
   const currentIndustryId = industries.find((ind) => ind.companies.some((c) => c.id === company.id))?.id ?? "";
   const emailThread = company.email_thread ?? [];
+  const feedItemDate = (item: ActivityFeedItem): string =>
+    item.kind === "activity" ? item.occurredAt : ("receivedAt" in item && item.receivedAt) || ("sentAt" in item && item.sentAt) || "";
   const sortedThread = [...emailThread].sort((a, b) => {
-    const ta = a.receivedAt || a.sentAt || "";
-    const tb = b.receivedAt || b.sentAt || "";
+    const ta = feedItemDate(a);
+    const tb = feedItemDate(b);
     return tb.localeCompare(ta);
   });
 
@@ -1070,9 +992,26 @@ function CompanyDetail({
     setEmailBody(company.email_draft ?? "");
     setSalary(company.salary ?? "");
     setCurrentFolderId(null);
+    setShowEmailUndo(false);
     const tone = (company.saved_tone as "professional" | "warm" | "bold") || "professional";
     setEmailTone(tone);
   }, [company.id, company.name, company.role, company.location, company.email_to, company.email_subject, company.email_draft, company.salary, company.saved_tone]);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      const tabs: Array<"email" | "jd" | "notes" | "contacts" | "files" | "prep"> = ["email", "jd", "notes", "contacts", "files", "prep"];
+      const i = parseInt(e.key, 10);
+      if (i >= 1 && i <= 6) {
+        e.preventDefault();
+        setDetailTab(tabs[i - 1]);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const currentStageIndex = STAGE_ORDER.indexOf(company.status);
 
@@ -1107,7 +1046,9 @@ function CompanyDetail({
         return;
       }
       if (data.email && String(data.email).trim()) {
+        previousEmailBodyRef.current = emailBody;
         setEmailBody(data.email);
+        setShowEmailUndo(true);
         showToast("Email generated");
       } else {
         showToast(data.error || "AI returned no content. Check server .env has GEMINI_API_KEY.");
@@ -1129,7 +1070,9 @@ function CompanyDetail({
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok && data.email) {
+      previousEmailBodyRef.current = emailBody;
       setEmailBody(data.email);
+      setShowEmailUndo(true);
     } else {
       throw new Error(data.error || "Refine failed");
     }
@@ -1159,6 +1102,7 @@ function CompanyDetail({
     };
     const entry: EmailThreadEntry = {
       id: "e-" + Date.now(),
+      kind: "email",
       direction: "sent" as const,
       stage: company.status,
       type: typeMap[company.status],
@@ -1208,7 +1152,7 @@ function CompanyDetail({
   };
 
   const draftWordCount = emailBody.trim().split(/\s+/).filter(Boolean).length;
-  const draftReadMins = Math.max(1, Math.ceil(draftWordCount / 200));
+  const draftReadMins = draftWordCount === 0 ? 0 : Math.max(1, Math.ceil(draftWordCount / 200));
 
   return (
     <div className="company-detail flex h-full flex-col overflow-hidden animate-in slide-in-from-right-4 duration-200">
@@ -1244,13 +1188,13 @@ function CompanyDetail({
                 placeholder="Location"
                 className="min-w-[80px] max-w-[140px] border-none bg-transparent py-0.5 text-[var(--text-muted)] outline-none placeholder:text-[var(--text-dim)] focus:rounded focus:bg-[var(--surface2)] focus:px-1.5"
               />
-              <span className="text-[var(--text-dim)]">·</span>
-              <input
-                type="text"
+                  <span className="text-[var(--text-dim)]">·</span>
+                  <input
+                    type="text"
                 value={salary}
                 onChange={(e) => setSalary(e.target.value)}
                 onBlur={() => salary !== (company.salary ?? "") && onUpdateCompany(company.id, { salary: salary.trim() || null })}
-                placeholder="Salary"
+                    placeholder="Salary"
                 className="min-w-[80px] max-w-[120px] border-none bg-transparent py-0.5 text-[var(--text-dim)] outline-none placeholder:text-[var(--text-dim)] focus:rounded focus:bg-[var(--surface2)] focus:px-1.5"
               />
             </div>
@@ -1271,9 +1215,9 @@ function CompanyDetail({
               </div>
             </div>
           </div>
-          <div className="detail-actions">
+          <div className="detail-actions flex items-center gap-2">
             <div className={cn("relative inline-block min-w-[110px]", statusChevronClass[company.status])}>
-              <select
+            <select
                 value={company.status}
                 onChange={(e) => onUpdateCompany(company.id, { status: e.target.value as JobStatus })}
                 className={cn(
@@ -1281,106 +1225,130 @@ function CompanyDetail({
                   statusSelectClass[company.status]
                 )}
               >
-                <option value="draft">Draft</option>
-                <option value="applied">Applied</option>
-                <option value="screening">Screening</option>
-                <option value="round1">Round 1</option>
-                <option value="round2">Round 2</option>
-                <option value="offer">Offer</option>
-                <option value="rejected">Rejected</option>
-              </select>
+                {STATUS_ORDER.map((s) => (
+                  <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                ))}
+            </select>
               <ChevronDown
                 className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 shrink-0 opacity-70"
                 aria-hidden
               />
-            </div>
+          </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`Delete "${company.name}" — ${company.role}?`)) onDeleteCompany();
+              }}
+              className="shrink-0 rounded-lg p-2 text-[var(--text-dim)] transition-colors hover:bg-[var(--red)]/10 hover:text-[var(--red)]"
+              aria-label="Delete job"
+              title="Delete job"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="rounded-full text-[11px]"
+              onClick={async () => {
+                if (!token) {
+                  showToast("Sign in to use AI updates");
+                  return;
+                }
+                if (emailThread.length === 0) {
+                  showToast("No activity to analyze yet");
+                  return;
+                }
+                try {
+                  const chronological = [...emailThread].sort((a, b) => feedItemDate(a).localeCompare(feedItemDate(b)));
+                  const res = await fetchWithAuth("/api/email/update-from-thread", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ thread: chronological, currentStatus: company.status }),
+                    token,
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok) {
+                    showToast(data.error || "AI update failed");
+                    return;
+                  }
+                  const { nextStatus, reason } = data as { nextStatus?: JobStatus | null; reason?: string };
+                  if (!nextStatus && !reason) {
+                    showToast("No clear update from email");
+                    return;
+                  }
+                  if (nextStatus && nextStatus !== company.status) {
+                    onUpdateCompany(company.id, { status: nextStatus });
+                  }
+                  if (reason) {
+                    onAddNote(company.id, `AI update: ${reason}`);
+                  }
+                  showToast("Updated from activity");
+                } catch {
+                  showToast("Could not reach AI update API");
+                }
+              }}
+            >
+              Update from activity
+            </Button>
           </div>
         </div>
-        <div className="detail-timeline flex items-center gap-0 overflow-x-auto pb-1">
-          {STAGE_ORDER.map((step, index) => {
-            const isActive = company.status === step;
-            const isDone = currentStageIndex >= 0 && index < currentStageIndex;
-            return (
-              <div key={step} className="timeline-step flex shrink-0 items-center">
-                <button
-                  type="button"
-                  onClick={() => onUpdateCompany(company.id, { status: step })}
-                  className={cn(
-                    "timeline-node rounded-full border px-3 py-1 text-[11px] font-medium transition-colors",
-                    isActive && "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]",
-                    isDone && "border-[var(--green)] bg-[var(--green)]/10 text-[var(--green)]",
-                    !isActive && !isDone && "border-[var(--border)] text-[var(--text-dim)] hover:border-[var(--accent)] hover:bg-[var(--accent-glow)] hover:text-[var(--accent)]"
-                  )}
-                >
-                  {step === "round1" ? "Round 1" : step === "round2" ? "Round 2" : step.charAt(0).toUpperCase() + step.slice(1)}
-                </button>
-                <div className={cn("timeline-connector h-px w-5 shrink-0 bg-[var(--border)]", isDone && "bg-[var(--green)] opacity-50")} />
-              </div>
-            );
-          })}
-        </div>
+      </div>
+      <div className="detail-timeline flex items-center gap-0 overflow-x-auto px-7 pt-2 pb-0">
+        {STAGE_ORDER.map((step, index) => {
+          const isActive = company.status === step;
+          const isDone = currentStageIndex >= 0 && index < currentStageIndex;
+          return (
+            <div key={step} className="timeline-step flex shrink-0 items-center">
+              <button
+                type="button"
+                onClick={() => onUpdateCompany(company.id, { status: step })}
+                className={cn(
+                  "timeline-node rounded-full border px-3 py-1 text-[11px] font-medium transition-colors",
+                  isActive && "border-[var(--accent)] bg-[var(--accent-glow)] text-[var(--accent)]",
+                  isDone && "border-[var(--green)] bg-[var(--green)]/10 text-[var(--green)]",
+                  !isActive &&
+                    !isDone &&
+                    "border-[var(--border)] text-[var(--text-dim)] hover:border-[var(--accent)] hover:bg-[var(--accent-glow)] hover:text-[var(--accent)]",
+                )}
+              >
+                {STATUS_LABELS[step]}
+              </button>
+              <div
+                className={cn(
+                  "timeline-connector h-px w-5 shrink-0 bg-[var(--border)]",
+                  isDone && "bg-[var(--green)] opacity-50",
+                )}
+              />
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="detail-tabs flex shrink-0 justify-start gap-0 border-b border-[var(--border)] bg-transparent px-7 pb-0" role="tablist">
+        <div className="detail-tabs flex shrink-0 justify-start gap-0 border-b border-[var(--border)] bg-transparent px-7 pt-0 pb-0" role="tablist">
           <button
             type="button"
             role="tab"
             aria-selected={detailTab === "email"}
             onClick={() => setDetailTab("email")}
-            className={cn(
-              "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors",
-              detailTab === "email" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
-            )}
+            className={cn(DETAIL_TAB_BASE, detailTabActiveClass(detailTab === "email"))}
           >
             Comms
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={detailTab === "notes"}
-            onClick={() => setDetailTab("notes")}
-            className={cn(
-              "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors",
-              detailTab === "notes" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
-            )}
-          >
+          <button type="button" role="tab" aria-selected={detailTab === "jd"} onClick={() => setDetailTab("jd")} className={cn(DETAIL_TAB_BASE, detailTabActiveClass(detailTab === "jd"))}>
+            Job description
+          </button>
+          <button type="button" role="tab" aria-selected={detailTab === "notes"} onClick={() => setDetailTab("notes")} className={cn(DETAIL_TAB_BASE, detailTabActiveClass(detailTab === "notes"))}>
             Notes
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={detailTab === "contacts"}
-            onClick={() => setDetailTab("contacts")}
-            className={cn(
-              "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors",
-              detailTab === "contacts" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
-            )}
-          >
+          <button type="button" role="tab" aria-selected={detailTab === "contacts"} onClick={() => setDetailTab("contacts")} className={cn(DETAIL_TAB_BASE, detailTabActiveClass(detailTab === "contacts"))}>
             Contacts
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={detailTab === "files"}
-            onClick={() => setDetailTab("files")}
-            className={cn(
-              "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors",
-              detailTab === "files" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
-            )}
-          >
+          <button type="button" role="tab" aria-selected={detailTab === "files"} onClick={() => setDetailTab("files")} className={cn(DETAIL_TAB_BASE, detailTabActiveClass(detailTab === "files"))}>
             Files
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={detailTab === "prep"}
-            onClick={() => setDetailTab("prep")}
-            className={cn(
-              "rounded-none border-b-2 border-transparent px-4 py-3 text-[13px] transition-colors",
-              detailTab === "prep" ? "border-[var(--accent)] text-[var(--text)]" : "text-[var(--text-dim)] hover:text-[var(--text-muted)]"
-            )}
-          >
+          <button type="button" role="tab" aria-selected={detailTab === "prep"} onClick={() => setDetailTab("prep")} className={cn(DETAIL_TAB_BASE, detailTabActiveClass(detailTab === "prep"))}>
             Interview Prep
           </button>
         </div>
@@ -1399,43 +1367,100 @@ function CompanyDetail({
             ) : null;
           })()}
           <div className="comms-hub flex min-h-0 flex-1 flex-row overflow-hidden">
-          <div className="comms-thread flex w-[280px] shrink-0 flex-col overflow-hidden border-r border-[var(--border)] bg-[var(--surface)]">
-            <div className="comms-thread-header flex items-center justify-between border-b border-[var(--border)] px-3 py-2">
-              <span className="text-xs font-medium uppercase tracking-wider text-[var(--text-dim)]">Comms</span>
+          <div className={cn("comms-thread flex shrink-0 flex-col overflow-hidden border-r border-[var(--border)] bg-[var(--surface)] transition-[width] duration-200", activityPanelCollapsed ? "w-10" : "w-[220px]")}>
+            {activityPanelCollapsed ? (
               <button
                 type="button"
-                onClick={() => setShowAddReceived(true)}
-                className="text-[11px] text-[var(--accent)] hover:underline"
+                onClick={() => setActivityPanelCollapsed(false)}
+                className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 bg-transparent transition-colors hover:bg-[var(--surface2)] group"
+                title="Activity"
               >
-                + Add received
+                <MessageCircle className="h-4 w-4 shrink-0 text-[var(--text-dim)] group-hover:text-[var(--text-muted)]" />
+                <ChevronRight className="h-3 w-3 shrink-0 text-[var(--text-dim)]/70 group-hover:text-[var(--text-dim)]" />
               </button>
+            ) : (
+            <>
+            <div className="comms-thread-header flex h-9 shrink-0 items-center justify-between gap-1 border-b border-[var(--border)] px-1.5">
+                  <div className="flex items-center gap-0.5">
+                    <button type="button" onClick={() => { setGotReplySummary(""); setGotReplyDate(new Date().toISOString().slice(0, 10)); setShowGotReplyModal(true); }} className="rounded p-1.5 text-[var(--text-dim)] hover:bg-[var(--surface2)] hover:text-[var(--text)]" title="Got a reply"><Reply className="h-3.5 w-3.5" /></button>
+                    <button type="button" onClick={() => { setPasteEmailText(""); setShowPasteEmailModal(true); }} className="rounded p-1.5 text-[var(--text-dim)] hover:bg-[var(--surface2)] hover:text-[var(--text)]" title="Paste email"><Clipboard className="h-3.5 w-3.5" /></button>
+                    <div className="relative">
+                      <button type="button" onClick={() => setShowLogMenu((v) => !v)} className="rounded p-1.5 text-[var(--text-dim)] hover:bg-[var(--surface2)] hover:text-[var(--text)]" title="Log call / meeting / message"><Plus className="h-3.5 w-3.5" /></button>
+                      {showLogMenu && (
+                        <>
+                          <div className="fixed inset-0 z-10" aria-hidden onClick={() => setShowLogMenu(false)} />
+                          <div className="absolute left-0 top-full z-20 mt-0.5 min-w-[120px] rounded border border-[var(--border)] bg-[var(--surface)] py-0.5 shadow-lg">
+                            {(["call", "meeting", "message", "other"] as const).map((type) => (
+                              <button key={type} type="button" onClick={() => { setLogActivityType(type); setLogDate(new Date().toISOString().slice(0, 10)); setLogTitle(""); setLogNotes(""); setLogContactId(null); setShowLogMenu(false); setShowLogModal(true); }} className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-[11px] text-[var(--text)] hover:bg-[var(--surface2)]">
+                                {type === "call" && <Phone className="h-3 w-3 shrink-0" />}
+                                {type === "meeting" && <Video className="h-3 w-3 shrink-0" />}
+                                {type === "message" && <MessageCircle className="h-3 w-3 shrink-0" />}
+                                {type === "other" && <CircleDot className="h-3 w-3 shrink-0" />}
+                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <button type="button" onClick={() => setActivityPanelCollapsed(true)} className="rounded p-1 text-[var(--text-dim)] hover:bg-[var(--surface2)] hover:text-[var(--text)]" title="Collapse">
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
             </div>
-            <div className="comms-thread-list flex-1 overflow-y-auto p-2">
+            <div className="comms-thread-list flex-1 overflow-y-auto p-1.5">
               {sortedThread.length === 0 ? (
-                <p className="px-2 py-4 text-xs text-[var(--text-dim)]">No emails yet. Send one from the drafter or add a received email.</p>
+                <p className="px-1.5 py-6 text-[11px] text-[var(--text-dim)]">No activity yet.</p>
               ) : (
-                sortedThread.map((e) => {
+                sortedThread.map((item) => {
+                  if (item.kind === "activity") {
+                    const a = item as ActivityEntry;
+                    const expanded = viewingActivityId === a.id;
+                    const contact = a.contactId && company.contacts?.find((c) => c.id === a.contactId);
+                    return (
+                      <div key={a.id} className="group/card relative mb-1.5 rounded border border-[var(--border)] bg-[var(--surface2)] p-1.5">
+                        <button type="button" onClick={() => { const next = emailThread.filter((x) => x.id !== a.id); onUpdateCompany(company.id, { email_thread: next }); setViewingActivityId((id) => id === a.id ? null : id); showToast("Removed"); }} className="absolute right-1 top-1 rounded p-0.5 text-[var(--text-dim)] opacity-0 hover:bg-[var(--red)]/10 hover:text-[var(--red)] group-hover/card:opacity-100" title="Delete">
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </button>
+                        <div className="flex items-center justify-between gap-1 pr-4">
+                          <span className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
+                            {a.activityType === "call" && <Phone className="h-2.5 w-2.5" />}
+                            {a.activityType === "meeting" && <Video className="h-2.5 w-2.5" />}
+                            {a.activityType === "message" && <MessageCircle className="h-2.5 w-2.5" />}
+                            {a.activityType === "other" && <CircleDot className="h-2.5 w-2.5" />}
+                            {a.activityType.charAt(0).toUpperCase() + a.activityType.slice(1)}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-dim)]">{formatDate(a.occurredAt)}</span>
+                        </div>
+                        <div className="mt-0.5 truncate text-[11px] font-medium text-[var(--text)]">{a.title || "—"}</div>
+                        {contact && <div className="truncate text-[10px] text-[var(--text-dim)]">{contact.name}</div>}
+                        <button type="button" onClick={() => setViewingActivityId(viewingActivityId === a.id ? null : a.id)} className="mt-1 rounded px-1 py-0.5 text-[10px] text-[var(--text-muted)] hover:text-[var(--text)]">
+                          {expanded ? "Hide" : "View"}
+                        </button>
+                        {expanded && (a.notes || contact) && (
+                          <div className="mt-1.5 border-t border-[var(--border)] pt-1.5 text-[10px] text-[var(--text-dim)] whitespace-pre-wrap">{a.notes || ""}</div>
+                        )}
+                      </div>
+                    );
+                  }
+                  const e = item as EmailThreadEntry;
                   const isReceived = e.direction === "received";
                   const dateStr = isReceived ? (e.receivedAt || "") : (e.sentAt || "");
                   return (
-                    <div key={e.id} className="mb-2 rounded-lg border border-[var(--border2)] bg-[var(--surface2)] p-2">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className={cn(
-                          "rounded px-1.5 py-0.5 text-[10px] font-medium",
-                          isReceived ? "bg-[var(--blue-dim)] text-[var(--blue)]" : statusSelectClass[e.stage ?? "draft"]
-                        )}>
+                    <div key={e.id} className="group/card relative mb-1.5 rounded border border-[var(--border)] bg-[var(--surface2)] p-1.5">
+                      <button type="button" onClick={() => { const next = emailThread.filter((x) => x.id !== e.id); onUpdateCompany(company.id, { email_thread: next }); setViewingThreadId((id) => id === e.id ? null : id); showToast("Removed"); }} className="absolute right-1 top-1 rounded p-0.5 text-[var(--text-dim)] opacity-0 hover:bg-[var(--red)]/10 hover:text-[var(--red)] group-hover/card:opacity-100" title="Delete">
+                        <Trash2 className="h-2.5 w-2.5" />
+                      </button>
+                      <div className="flex items-center justify-between gap-1 pr-4">
+                        <span className={cn("text-[10px] font-medium", isReceived ? "text-[var(--blue)]" : statusSelectClass[e.stage ?? "draft"])}>
                           {isReceived ? "In" : e.stage === "round1" ? "R1" : e.stage === "round2" ? "R2" : (e.stage ?? "draft").slice(0, 2).toUpperCase()}
                         </span>
                         <span className="text-[10px] text-[var(--text-dim)]">{formatDate(dateStr)}</span>
                       </div>
-                      <div className="mt-1 truncate text-xs font-medium text-[var(--text)]">{e.subject}</div>
-                      {isReceived && e.from && <div className="truncate text-[10px] text-[var(--text-dim)]">From: {e.from}</div>}
-                      <div className="mt-0.5 truncate text-[11px] text-[var(--text-dim)]">{e.body.split("\n")[0] || ""}</div>
-                      <button
-                        type="button"
-                        onClick={() => setViewingThreadId(e.id)}
-                        className="mt-1.5 text-[11px] text-[var(--accent)] hover:underline"
-                      >
+                      <div className="mt-0.5 truncate text-[11px] font-medium text-[var(--text)]">{e.subject}</div>
+                      {isReceived && e.from && <div className="truncate text-[10px] text-[var(--text-dim)]">{e.from}</div>}
+                      <div className="mt-0.5 truncate text-[10px] text-[var(--text-dim)]">{e.body.split("\n")[0] || ""}</div>
+                      <button type="button" onClick={() => setViewingThreadId(e.id)} className="mt-1 rounded px-1 py-0.5 text-[10px] text-[var(--text-muted)] hover:text-[var(--text)]">
                         View
                       </button>
                     </div>
@@ -1443,6 +1468,8 @@ function CompanyDetail({
                 })
               )}
             </div>
+            </>
+            )}
           </div>
           <div className="comms-drafter flex min-w-0 flex-1 flex-col overflow-hidden px-7 py-5">
             <div className="comms-stage-header mb-2 text-sm font-medium text-[var(--accent)]">
@@ -1489,49 +1516,115 @@ function CompanyDetail({
                   type="button"
                   onClick={() => handleToneChange(tone)}
                   className={cn(
-                    "ai-chip rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                    "rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors",
                     emailTone === tone ? "border-[var(--border)] bg-[var(--accent-glow)] text-[var(--accent)]" : "border-[var(--border)] bg-transparent text-[var(--text-muted)] hover:bg-[var(--surface2)] hover:text-[var(--text)]"
                   )}
                 >
                   {tone.charAt(0).toUpperCase() + tone.slice(1)}
-                </button>
+              </button>
               ))}
-              <div className="ai-chip-divider h-4 w-px bg-[var(--border)]" />
+              <span className="h-4 w-px bg-[var(--border)]" aria-hidden />
               {(["concise", "standard", "detailed"] as const).map((len) => (
                 <button
                   key={len}
                   type="button"
                   onClick={() => setEmailLength(len)}
                   className={cn(
-                    "ai-chip rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors",
+                    "rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors",
                     emailLength === len ? "border-[var(--border)] bg-[var(--accent-glow)] text-[var(--accent)]" : "border-[var(--border)] bg-transparent text-[var(--text-muted)] hover:bg-[var(--surface2)] hover:text-[var(--text)]"
                   )}
                 >
                   {len.charAt(0).toUpperCase() + len.slice(1)}
-                </button>
+              </button>
               ))}
-              <div className="ai-chip-divider h-4 w-px bg-[var(--border)]" />
+              <span className="h-4 w-px bg-[var(--border)]" aria-hidden />
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                className="rounded-md border-[var(--border)] px-2.5 py-1 text-[11px] font-medium h-auto"
+                className="rounded-[var(--radius-lg)] px-2.5 py-1 text-[11px] font-medium h-auto"
                 disabled={emailGenerating || !token}
                 onClick={handleGenerateEmail}
               >
                 {emailGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : "Generate"}
               </Button>
+              <div className="relative">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="rounded-[var(--radius-lg)] px-2.5 py-1 text-[11px] font-medium h-auto gap-1"
+                  disabled={refiningEmail || subjectLinesGenerating || !token}
+                  onClick={() => setImproveMenuOpen((o) => !o)}
+                  aria-expanded={improveMenuOpen}
+                  aria-haspopup="true"
+                >
+                  {refiningEmail || subjectLinesGenerating ? <Loader2 className="h-3 w-3 animate-spin" /> : "Improve"}
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", improveMenuOpen && "rotate-180")} />
+                </Button>
+                {improveMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" aria-hidden onClick={() => setImproveMenuOpen(false)} />
+                    <div className="absolute left-0 top-full z-20 mt-1 min-w-[200px] rounded-[var(--radius-lg)] border border-[var(--border2)] bg-[var(--surface)] py-1 shadow-lg">
+                      {IMPROVE_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          className="w-full px-3 py-2 text-left text-[12px] text-[var(--text)] hover:bg-[var(--surface2)]"
+                          onClick={async () => {
+                            setImproveMenuOpen(false);
+                            if (opt.type === "refine") {
+                              if (!emailBody.trim()) { showToast("Write or generate a draft first"); return; }
+                              setRefiningEmail(true);
+                              try {
+                                await handleRefineEmail(opt.prompt);
+                                showToast("Updated");
+                              } catch {
+                                showToast("Refine failed");
+                              } finally {
+                                setRefiningEmail(false);
+                              }
+                            }
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                      <div className="my-1 border-t border-[var(--border)]" />
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2 text-left text-[12px] text-[var(--text)] hover:bg-[var(--surface2)]"
+                        onClick={() => {
+                          setImproveMenuOpen(false);
+                          handleGenerateSubjectLines();
+                        }}
+                      >
+                        Suggest subject lines
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
             <div className="email-body-area flex-1 overflow-y-auto">
               <textarea
                 className="email-body min-h-[200px] w-full resize-none border-none bg-transparent py-1 text-sm leading-relaxed text-[var(--text)] outline-none placeholder:text-[var(--text-dim)]"
-                placeholder="Your personalised email will appear here..."
+                placeholder={COMMS_STAGE_PLACEHOLDERS[company.status]}
                 value={emailBody}
                 onChange={(e) => setEmailBody(e.target.value)}
               />
             </div>
             <div className="flex shrink-0 items-center justify-between border-t border-[var(--border)] py-2 text-[11px] text-[var(--text-dim)]">
-              <span>{draftWordCount} words · ~{draftReadMins}m read</span>
+              <span>{draftWordCount} words{draftWordCount > 0 ? ` · ~${draftReadMins}m read` : ""}</span>
+              {showEmailUndo && (
+                <button
+                  type="button"
+                  onClick={() => { setEmailBody(previousEmailBodyRef.current); setShowEmailUndo(false); showToast("Reverted"); }}
+                  className="rounded px-2 py-0.5 text-[11px] font-medium text-[var(--text-muted)] transition-colors hover:bg-[var(--surface2)] hover:text-[var(--text)]"
+                >
+                  Undo AI
+                </button>
+              )}
             </div>
             <div className="email-actions flex shrink-0 items-center gap-2 border-t border-[var(--border)] py-3.5">
               <Button size="sm" className="rounded-full bg-[var(--accent)] text-[#1a1508] hover:bg-[var(--accent2)]" onClick={handleSendToThread}>
@@ -1569,22 +1662,13 @@ function CompanyDetail({
               >
                 Save as template
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="rounded-full"
-                disabled={subjectLinesGenerating || !token}
-                onClick={handleGenerateSubjectLines}
-              >
-                {subjectLinesGenerating ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : null}
-                Generate 3 subject lines
-              </Button>
             </div>
           </div>
 
           {viewingThreadId && (() => {
-            const entry = emailThread.find((e) => e.id === viewingThreadId);
-            if (!entry) return null;
+            const item = emailThread.find((e) => e.id === viewingThreadId);
+            if (!item || item.kind === "activity") return null;
+            const entry = item as EmailThreadEntry;
             const isReceived = entry.direction === "received";
             const dateStr = isReceived ? (entry.receivedAt || "") : (entry.sentAt || "");
             return (
@@ -1610,47 +1694,206 @@ function CompanyDetail({
             );
           })()}
 
-          {showAddReceived && (
+          {showGotReplyModal && (
             <div
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-              onClick={() => setShowAddReceived(false)}
+              onClick={() => setShowGotReplyModal(false)}
+            >
+              <div
+                className="w-full max-w-sm rounded-xl border border-[var(--border2)] bg-[var(--surface)] p-4 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="mb-2 text-sm font-medium">Got a reply</h3>
+                <p className="mb-3 text-xs text-[var(--text-dim)]">Quick log—no need to paste the email. Optional: one line on what they said.</p>
+                <Input
+                  placeholder="e.g. Invited to phone screen next week"
+                  value={gotReplySummary}
+                  onChange={(e) => setGotReplySummary(e.target.value)}
+                  className="mb-2 bg-[var(--surface2)]"
+                />
+                <input
+                  type="date"
+                  value={gotReplyDate}
+                  onChange={(e) => setGotReplyDate(e.target.value)}
+                  className="mb-4 w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setShowGotReplyModal(false)}>Cancel</Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const occurredAt = gotReplyDate ? new Date(gotReplyDate + "T12:00:00").toISOString() : new Date().toISOString();
+                      const newEntry: ActivityEntry = {
+                        id: "a-" + Date.now(),
+                        kind: "activity",
+                        activityType: "message",
+                        occurredAt,
+                        title: gotReplySummary.trim() || "Reply received",
+                        notes: null,
+                        contactId: null,
+                      };
+                      onUpdateCompany(company.id, { email_thread: [...emailThread, newEntry] });
+                      setShowGotReplyModal(false);
+                      showToast("Reply logged");
+                    }}
+                  >
+                    Log
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showPasteEmailModal && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+              onClick={() => setShowPasteEmailModal(false)}
+            >
+              <div
+                className="w-full max-w-lg rounded-xl border border-[var(--border2)] bg-[var(--surface)] p-4 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 className="mb-2 text-sm font-medium">Paste email</h3>
+                <p className="mb-3 text-xs text-[var(--text-dim)]">Paste an email from your inbox. We’ll try to detect From, Subject, and date.</p>
+                <textarea
+                  placeholder="From: recruiter@company.com&#10;Subject: Next steps&#10;Date: Tue, 10 Mar 2025&#10;&#10;Hi, we’d like to invite you..."
+                  value={pasteEmailText}
+                  onChange={(e) => setPasteEmailText(e.target.value)}
+                  rows={8}
+                  className="mb-4 w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm font-mono resize-y"
+                />
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setShowPasteEmailModal(false)}>Cancel</Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      const raw = pasteEmailText.trim();
+                      if (!raw) {
+                        showToast("Paste something first");
+                        return;
+                      }
+                      const fromMatch = raw.match(/^\s*From:\s*(.+?)(?:\n|$)/im);
+                      const subjectMatch = raw.match(/^\s*Subject:\s*(.+?)(?:\n|$)/im);
+                      const dateMatch = raw.match(/^\s*(?:Date|Sent):\s*(.+?)(?:\n|$)/im);
+                      let body = raw;
+                      const lines = raw.split(/\n/);
+                      let bodyStart = 0;
+                      for (let i = 0; i < lines.length; i++) {
+                        if (/^\s*(From|Subject|Date|Sent|To|Cc):\s*/i.test(lines[i])) continue;
+                        if (lines[i].trim() === "" && i < lines.length - 1) { bodyStart = i + 1; break; }
+                        bodyStart = i;
+                        break;
+                      }
+                      body = lines.slice(bodyStart).join("\n").trim() || raw;
+                      const from = fromMatch ? fromMatch[1].trim() : undefined;
+                      const subject = subjectMatch ? subjectMatch[1].trim() : "(No subject)";
+                      let receivedAt = new Date().toISOString();
+                      if (dateMatch) {
+                        const d = new Date(dateMatch[1].trim());
+                        if (!Number.isNaN(d.getTime())) receivedAt = d.toISOString();
+                      }
+                      const newEntry: EmailThreadEntry = {
+                        id: "e-" + Date.now(),
+                        kind: "email",
+                        direction: "received",
+                        subject,
+                        body: body.slice(0, 50000),
+                        from,
+                        receivedAt,
+                      };
+                      onUpdateCompany(company.id, { email_thread: [...emailThread, newEntry] });
+                      setPasteEmailText("");
+                      setShowPasteEmailModal(false);
+                      showToast("Email added");
+                    }}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showLogModal && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+              onClick={() => setShowLogModal(false)}
             >
               <div
                 className="w-full max-w-md rounded-xl border border-[var(--border2)] bg-[var(--surface)] p-4 shadow-xl"
                 onClick={(e) => e.stopPropagation()}
               >
-                <h3 className="mb-3 text-sm font-medium">Add received email</h3>
-                <div className="space-y-2">
-                  <Input placeholder="From (email or name)" value={receivedFrom} onChange={(e) => setReceivedFrom(e.target.value)} className="bg-[var(--surface2)]" />
-                  <Input placeholder="Subject" value={receivedSubject} onChange={(e) => setReceivedSubject(e.target.value)} className="bg-[var(--surface2)]" />
-                  <input type="date" value={receivedDate} onChange={(e) => setReceivedDate(e.target.value)} className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm" />
-                  <textarea placeholder="Body" value={receivedBody} onChange={(e) => setReceivedBody(e.target.value)} rows={6} className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
+                <h3 className="mb-3 text-sm font-medium">Log {logActivityType.charAt(0).toUpperCase() + logActivityType.slice(1)}</h3>
+                <div className="space-y-3">
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-[var(--text-dim)]">Date</span>
+                    <input
+                      type="date"
+                      value={logDate}
+                      onChange={(e) => setLogDate(e.target.value)}
+                      className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-[var(--text-dim)]">Title</span>
+                    <Input
+                      placeholder={logActivityType === "call" ? "e.g. Recruiter screen" : logActivityType === "meeting" ? "e.g. Technical round 1" : "Summary"}
+                      value={logTitle}
+                      onChange={(e) => setLogTitle(e.target.value)}
+                      className="bg-[var(--surface2)]"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1 block text-xs text-[var(--text-dim)]">Notes (optional)</span>
+                    <textarea
+                      placeholder="Outcome, next steps..."
+                      value={logNotes}
+                      onChange={(e) => setLogNotes(e.target.value)}
+                      rows={3}
+                      className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none"
+                    />
+                  </label>
+                  {company.contacts && company.contacts.length > 0 && (
+                    <label className="block">
+                      <span className="mb-1 block text-xs text-[var(--text-dim)]">With (optional)</span>
+                      <select
+                        value={logContactId ?? ""}
+                        onChange={(e) => setLogContactId(e.target.value || null)}
+                        className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm"
+                      >
+                        <option value="">—</option>
+                        {company.contacts.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}{c.role ? ` · ${c.role}` : ""}</option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                 </div>
                 <div className="mt-4 flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setShowAddReceived(false)}>Cancel</Button>
+                  <Button type="button" variant="outline" onClick={() => setShowLogModal(false)}>Cancel</Button>
                   <Button
                     type="button"
                     onClick={() => {
-                      if (!receivedSubject.trim() || !receivedBody.trim()) {
-                        showToast("Subject and body required");
-                        return;
-                      }
-                      const receivedAt = receivedDate ? new Date(receivedDate + "T12:00:00").toISOString() : new Date().toISOString();
-                      const newEntry: EmailThreadEntry = {
-                        id: "e-" + Date.now(),
-                        direction: "received",
-                        subject: receivedSubject.trim(),
-                        body: receivedBody.trim(),
-                        from: receivedFrom.trim() || undefined,
-                        receivedAt,
+                      const title = logTitle.trim() || (logActivityType.charAt(0).toUpperCase() + logActivityType.slice(1));
+                      const occurredAt = logDate ? new Date(logDate + "T12:00:00").toISOString() : new Date().toISOString();
+                      const newEntry: ActivityEntry = {
+                        id: "a-" + Date.now(),
+                        kind: "activity",
+                        activityType: logActivityType,
+                        occurredAt,
+                        title,
+                        notes: logNotes.trim() || null,
+                        contactId: logContactId || null,
                       };
                       onUpdateCompany(company.id, { email_thread: [...emailThread, newEntry] });
-                      setReceivedFrom(""); setReceivedSubject(""); setReceivedBody(""); setReceivedDate(new Date().toISOString().slice(0, 10));
-                      setShowAddReceived(false);
-                      showToast("Received email added");
+                      setLogTitle("");
+                      setLogNotes("");
+                      setLogContactId(null);
+                      setShowLogModal(false);
+                      showToast(`${logActivityType.charAt(0).toUpperCase() + logActivityType.slice(1)} logged`);
                     }}
                   >
-                    Add to thread
+                    Save
                   </Button>
                 </div>
               </div>
@@ -1685,14 +1928,114 @@ function CompanyDetail({
             </div>
           )}
 
-          <AIInsightsPanel
-            company={company}
-            showToast={showToast}
-            currentEmail={emailBody}
-            onRefineEmail={handleRefineEmail}
-            token={token}
-          />
           </div>
+        </div>
+        )}
+
+        {detailTab === "jd" && (
+        <div className="flex flex-1 flex-col overflow-y-auto px-7 py-5" role="tabpanel">
+          <p className="mb-3 text-xs text-[var(--text-muted)]">Paste a job link or description. Used to tailor comms when you use Generate, and for your reference.</p>
+          <div className="mb-3 flex gap-2">
+            <input
+              type="url"
+              placeholder="Paste job URL to fetch description..."
+              value={jdUrlInput}
+              onChange={(e) => setJdUrlInput(e.target.value)}
+              className="flex-1 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-[13px] text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--border2)] focus:outline-none"
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!jdUrlInput.trim() || !token || jdFetching}
+              onClick={async () => {
+                if (!token || !jdUrlInput.trim()) return;
+                setJdFetching(true);
+                try {
+                  const res = await fetchWithAuth("/api/parse-jd", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: jdUrlInput.trim() }), token });
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok) { showToast(data.error || "Failed to fetch"); return; }
+                  onUpdateCompany(company.id, {
+                    jd_text: data.jdText ?? company.jd_text ?? null,
+                    ...(data.companyName && !company.name ? { name: data.companyName } : {}),
+                    ...(data.role && !company.role ? { role: data.role } : {}),
+                  });
+                  setJdUrlInput("");
+                  showToast("Job description fetched");
+                } catch {
+                  showToast("Could not reach API");
+                } finally {
+                  setJdFetching(false);
+                }
+              }}
+            >
+              {jdFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Fetch from URL"}
+            </Button>
+          </div>
+          <textarea
+            placeholder="Or paste the job description here..."
+            value={company.jd_text ?? ""}
+            onChange={(e) => onUpdateCompany(company.id, { jd_text: e.target.value || null })}
+            className="min-h-[180px] w-full rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-[13px] leading-relaxed text-[var(--text)] placeholder:text-[var(--text-dim)] focus:border-[var(--border2)] focus:outline-none resize-y"
+            rows={8}
+          />
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!company.jd_text?.trim() || !token || jdAnalyzing}
+              onClick={async () => {
+                if (!token || !company.jd_text?.trim()) return;
+                setJdAnalyzing(true);
+                try {
+                  const res = await fetchWithAuth("/api/jd/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      jdText: company.jd_text,
+                      companyName: company.name,
+                      role: company.role,
+                      profile: profile || undefined,
+                    }),
+                    token,
+                  });
+                  const data = await res.json().catch(() => ({}));
+                  if (!res.ok) { showToast(data.error || "Analysis failed"); return; }
+                  onUpdateCompany(company.id, { jd_analysis: data });
+                  showToast("Key parts extracted");
+                } catch {
+                  showToast("Could not reach API");
+                } finally {
+                  setJdAnalyzing(false);
+                }
+              }}
+            >
+              {jdAnalyzing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Extract key parts with AI"}
+            </Button>
+            {company.jd_analysis && (
+              <Button type="button" size="sm" variant="ghost" className="text-[var(--text-muted)]" onClick={() => onUpdateCompany(company.id, { jd_analysis: null })}>
+                Clear summary
+              </Button>
+            )}
+            {(company.jd_text || company.jd_analysis) && (
+              <Button type="button" size="sm" variant="ghost" className="text-[var(--red)] hover:text-[var(--red)]" onClick={() => { onUpdateCompany(company.id, { jd_text: null, jd_analysis: null }); showToast("Job description cleared"); }}>
+                Clear all
+              </Button>
+            )}
+          </div>
+          {company.jd_analysis && typeof company.jd_analysis === "object" && (
+            <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface2)] p-4">
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-dim)]">AI summary</h4>
+              <div className="space-y-2 text-[13px]">
+                {"matchScore" in company.jd_analysis && <p><span className="text-[var(--text-muted)]">Fit:</span> {(company.jd_analysis as { matchScore?: number }).matchScore}%</p>}
+                {"suggestedAngle" in company.jd_analysis && (company.jd_analysis as { suggestedAngle?: string }).suggestedAngle && <p><span className="text-[var(--text-muted)]">Angle:</span> {(company.jd_analysis as { suggestedAngle?: string }).suggestedAngle}</p>}
+                {"matchedKeywords" in company.jd_analysis && Array.isArray((company.jd_analysis as { matchedKeywords?: string[] }).matchedKeywords) && ((company.jd_analysis as { matchedKeywords?: string[] }).matchedKeywords?.length) > 0 && <p><span className="text-[var(--text-muted)]">Match:</span> {(company.jd_analysis as { matchedKeywords: string[] }).matchedKeywords.join(", ")}</p>}
+                {"missingKeywords" in company.jd_analysis && Array.isArray((company.jd_analysis as { missingKeywords?: string[] }).missingKeywords) && ((company.jd_analysis as { missingKeywords?: string[] }).missingKeywords?.length) > 0 && <p><span className="text-[var(--text-muted)]">Address:</span> {(company.jd_analysis as { missingKeywords: string[] }).missingKeywords.join(", ")}</p>}
+                {"redFlags" in company.jd_analysis && Array.isArray((company.jd_analysis as { redFlags?: string[] }).redFlags) && ((company.jd_analysis as { redFlags?: string[] }).redFlags?.length) > 0 && <p><span className="text-[var(--text-muted)]">Watch:</span> {(company.jd_analysis as { redFlags: string[] }).redFlags.join(", ")}</p>}
+              </div>
+            </div>
+          )}
         </div>
         )}
 
@@ -1700,7 +2043,7 @@ function CompanyDetail({
         <div className="flex flex-1 flex-col overflow-y-auto px-7 pt-2 pb-5" role="tabpanel">
           <textarea
             className="min-h-[100px] w-full rounded-lg border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--text-dim)]"
-            placeholder="Add a note about this company..."
+            placeholder="Notes, process steps (e.g. psychometric test, take-home), or reminders…"
             value={newNoteContent}
             onChange={(e) => setNewNoteContent(e.target.value)}
           />
@@ -1817,10 +2160,11 @@ function CompanyDetail({
           const savePrep = (next: InterviewPrep) => onUpdateCompany(company.id, { interview_prep: next });
           return (
             <div className="flex flex-1 flex-col overflow-y-auto px-7 py-5" role="tabpanel">
-              <h3 className="mb-3 text-sm font-medium text-[var(--accent)]">Interview Prep</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--text-dim)]">Likely questions (from JD / experience)</label>
+              <h3 className="mb-1 text-sm font-medium text-[var(--accent)]">Interview Prep</h3>
+              <p className="mb-4 text-xs text-[var(--text-muted)]">Use the Job description tab for role context. For steps like psychometric tests or take-homes, add them in Notes.</p>
+              <div className="space-y-5">
+                <section>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--text-dim)]">Likely questions</label>
                   <div className="space-y-1">
                     {(prep.likelyQuestions ?? []).map((q, i) => (
                       <div key={i} className="flex gap-2">
@@ -1838,9 +2182,9 @@ function CompanyDetail({
                     ))}
                     <Button type="button" variant="outline" size="sm" onClick={() => savePrep({ ...prep, likelyQuestions: [...(prep.likelyQuestions ?? []), ""] })}>+ Add question</Button>
                   </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--text-dim)]">Your answers</label>
+                </section>
+                <section>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--text-dim)]">Your answers</label>
                   <div className="space-y-2">
                     {(prep.answers ?? []).map((a, i) => (
                       <div key={i} className="rounded-lg border border-[var(--border2)] bg-[var(--surface2)] p-2">
@@ -1851,19 +2195,19 @@ function CompanyDetail({
                     ))}
                     <Button type="button" variant="outline" size="sm" onClick={() => savePrep({ ...prep, answers: [...(prep.answers ?? []), { q: "", a: "" }] })}>+ Add answer</Button>
                   </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--text-dim)]">Talking points</label>
-                  <textarea value={(prep.talkingPoints ?? []).join("\n")} onChange={(e) => savePrep({ ...prep, talkingPoints: e.target.value.split("\n").filter(Boolean) })} placeholder="One per line" rows={3} className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--text-dim)]">Company research notes</label>
-                  <textarea value={prep.researchNotes ?? ""} onChange={(e) => savePrep({ ...prep, researchNotes: e.target.value })} placeholder="Notes about the company, team, product..." rows={4} className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-[var(--text-dim)]">Questions to ask them</label>
-                  <textarea value={(prep.questionsToAsk ?? []).join("\n")} onChange={(e) => savePrep({ ...prep, questionsToAsk: e.target.value.split("\n").filter(Boolean) })} placeholder="One per line" rows={3} className="w-full rounded-md border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
-                </div>
+                </section>
+                <section>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--text-dim)]">Talking points</label>
+                  <textarea value={(prep.talkingPoints ?? []).join("\n")} onChange={(e) => savePrep({ ...prep, talkingPoints: e.target.value.split("\n").filter(Boolean) })} placeholder="One per line" rows={3} className="w-full rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
+                </section>
+                <section>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--text-dim)]">Company research</label>
+                  <textarea value={prep.researchNotes ?? ""} onChange={(e) => savePrep({ ...prep, researchNotes: e.target.value })} placeholder="Notes about the company, team, product..." rows={4} className="w-full rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
+                </section>
+                <section>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-[var(--text-dim)]">Questions to ask them</label>
+                  <textarea value={(prep.questionsToAsk ?? []).join("\n")} onChange={(e) => savePrep({ ...prep, questionsToAsk: e.target.value.split("\n").filter(Boolean) })} placeholder="One per line" rows={3} className="w-full rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface2)] px-3 py-2 text-sm resize-none" />
+                </section>
               </div>
             </div>
           );

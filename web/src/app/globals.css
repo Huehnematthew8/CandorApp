@@ -4,29 +4,35 @@
 
 @layer base {
   :root {
-    /* Candor dark theme (match original HTML) */
+    /* Candor dark — Supabase-inspired: fluid, minimal, layered surfaces */
     --bg: #0c0c0e;
     --surface: #111114;
-    --surface2: #18181c;
-    --surface3: #1f1f25;
-    --border: rgba(255, 255, 255, 0.07);
-    --border2: rgba(255, 255, 255, 0.12);
+    --surface2: #16161a;
+    --surface3: #1c1c21;
+    --border: rgba(255, 255, 255, 0.06);
+    --border2: rgba(255, 255, 255, 0.1);
     --text: #f0ede8;
-    --text-muted: #7a7880;
-    --text-dim: #4a4850;
+    --text-muted: #8b8892;
+    --text-dim: #5c5a62;
     --accent: #c8a97e;
     --accent2: #e8d5b7;
-    --accent-glow: rgba(200, 169, 126, 0.15);
+    --accent-glow: rgba(200, 169, 126, 0.12);
     --green: #4a9b6f;
-    --green-dim: rgba(74, 155, 111, 0.15);
+    --green-dim: rgba(74, 155, 111, 0.12);
     --blue: #5b8bd4;
-    --blue-dim: rgba(91, 139, 212, 0.15);
+    --blue-dim: rgba(91, 139, 212, 0.12);
     --amber: #d4875b;
-    --amber-dim: rgba(212, 135, 91, 0.15);
+    --amber-dim: rgba(212, 135, 91, 0.12);
     --purple: #8b6fd4;
-    --purple-dim: rgba(139, 111, 212, 0.15);
+    --purple-dim: rgba(139, 111, 212, 0.12);
     --red: #c45f5f;
-    --red-dim: rgba(196, 95, 95, 0.15);
+    --red-dim: rgba(196, 95, 95, 0.12);
+    /* Motion: Supabase-like fluidity */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration: 150ms;
+    --radius: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
     /* Aliases for candor-* */
     --candor-bg: var(--bg);
     --candor-surface: var(--surface);
@@ -64,11 +70,23 @@
     --border-hsl: 0 0% 14%;
     --input: 0 0% 14%;
     --ring: 38 35% 62%;
-    --radius: 0.5rem;
   }
 
   * {
     border-color: var(--border);
+  }
+
+  /* Fluid transitions for interactive elements (Supabase-style) */
+  button, a, [role="button"], input, select, textarea {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: var(--duration);
+    transition-timing-function: var(--ease-out);
+  }
+
+  /* Dark theme checkboxes – use accent and dark native appearance */
+  input[type="checkbox"] {
+    color-scheme: dark;
+    accent-color: var(--accent);
   }
 
   body {
@@ -78,6 +96,22 @@
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Themed scrollbars (dark, thin) for scrollable areas */
+  .scrollbar-themed::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-themed::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-themed::-webkit-scrollbar-thumb {
+    background: var(--border2);
+    border-radius: 3px;
+  }
+  .scrollbar-themed::-webkit-scrollbar-thumb:hover {
+    background: var(--text-dim);
   }
 }
 

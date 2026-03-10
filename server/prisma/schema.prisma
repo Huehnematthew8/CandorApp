@@ -75,6 +75,7 @@ model Company {
   savedTone   String?   @map("saved_tone")
   appliedAt   DateTime? @map("applied_at")
   jdText      String?   @map("jd_text")
+  jobUrl      String?   @map("job_url")       // link to job posting / application
   jdAnalysis  Json?     @map("jd_analysis")   // { matchScore, matchedKeywords, missingKeywords, suggestedAngle, redFlags }
   country     String?   @map("country")
   visaRequired Boolean? @map("visa_required")

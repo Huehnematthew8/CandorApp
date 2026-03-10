@@ -109,7 +109,7 @@ export function GmailSyncConsentModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-sm text-[var(--text-dim)] underline hover:text-[var(--text-muted)]"
+            className="rounded-md border border-[var(--border2)] bg-transparent px-3 py-1.5 text-sm font-medium text-[var(--text-dim)] transition-colors hover:bg-[var(--surface2)] hover:text-[var(--text-muted)]"
           >
             No thanks
           </button>

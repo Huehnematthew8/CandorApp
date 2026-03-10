@@ -545,7 +545,7 @@ export function ProfileView() {
                       <Input placeholder="Company / institution" value={item.sub} onChange={(e) => updateTimeline(i, { sub: e.target.value })} className="h-8 text-sm" />
                       <Input placeholder="Description" value={item.desc} onChange={(e) => updateTimeline(i, { desc: e.target.value })} className="h-8 text-sm" />
                     </div>
-                    <button type="button" onClick={() => removeTimeline(i)} className="shrink-0 text-[var(--candor-red)] hover:underline">Remove</button>
+                    <button type="button" onClick={() => removeTimeline(i)} className="shrink-0 rounded-md border border-[var(--candor-border2)] bg-transparent px-2 py-0.5 text-[11px] font-medium text-[var(--candor-muted)] transition-colors hover:bg-[var(--candor-red)]/10 hover:border-[var(--candor-red)]/30 hover:text-[var(--candor-red)]">Remove</button>
                   </div>
                 ))}
               </div>
@@ -592,7 +592,7 @@ export function ProfileView() {
                     <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--candor-surface3)]">
                       <div className="h-full rounded-full bg-[var(--candor-green)]" style={{ width: `${s.score}%` }} />
                     </div>
-                    <button type="button" onClick={() => removeStrength(i)} className="text-[var(--candor-red)] hover:underline">Remove</button>
+                    <button type="button" onClick={() => removeStrength(i)} className="rounded-md border border-[var(--candor-border2)] bg-transparent px-2 py-0.5 text-[11px] font-medium text-[var(--candor-muted)] transition-colors hover:bg-[var(--candor-red)]/10 hover:border-[var(--candor-red)]/30 hover:text-[var(--candor-red)]">Remove</button>
                   </div>
                 ))}
               </div>
@@ -632,7 +632,7 @@ export function ProfileView() {
                       rows={2}
                       className="w-full rounded border border-[var(--candor-border2)] bg-[var(--candor-surface2)] p-2 text-sm"
                     />
-                    <button type="button" onClick={() => removeObservation(i)} className="mt-1 text-xs text-[var(--candor-red)] hover:underline">Remove</button>
+                    <button type="button" onClick={() => removeObservation(i)} className="mt-1 rounded-md border border-[var(--candor-border2)] bg-transparent px-2 py-0.5 text-[11px] font-medium text-[var(--candor-muted)] transition-colors hover:bg-[var(--candor-red)]/10 hover:border-[var(--candor-red)]/30 hover:text-[var(--candor-red)]">Remove</button>
                   </div>
                 ))}
               </div>

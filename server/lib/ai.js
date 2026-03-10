@@ -67,6 +67,44 @@ async function generate(prompt) {
   return null;
 }
 
+// Given an activity feed (emails + calls/meetings/messages) and current status, suggest next status + reason
+async function classifyEmailThreadWithAI(thread, currentStatus) {
+  const safeThread = Array.isArray(thread) ? thread : [];
+  const trimmed = safeThread.slice(0, 25); // cap size
+  const prompt = `You help update a job application tracker from communication and activity history.
+
+Current pipeline status: ${currentStatus || "unknown"}.
+
+You are given an array of touchpoints (chronological, most recent last). Each item is either:
+- An email: has direction ("sent" | "received"), subject, body, sentAt or receivedAt (ISO string).
+- An activity: has kind "activity", activityType ("call" | "meeting" | "message" | "other"), title, notes (optional), occurredAt (ISO string).
+
+Use both emails and activities (e.g. "Recruiter screen" call, "Technical round 1" meeting) to infer progress.
+
+Decide:
+- nextStatus: one of ["draft","applied","screening","round1","round2","offer","rejected"] or null if you cannot infer
+- reason: short human explanation (1–2 sentences).
+
+Return ONLY JSON, no markdown, as:
+{ "nextStatus": string | null, "reason": string }
+
+Activity feed JSON:
+${JSON.stringify(trimmed).slice(0, 14000)}`;
+
+  const raw = await generate(prompt);
+  if (!raw) return null;
+  try {
+    const json = raw.replace(/```json?\s*/g, "").replace(/```\s*$/g, "").trim();
+    const data = JSON.parse(json);
+    const allowed = ["draft","applied","screening","round1","round2","offer","rejected"];
+    const nextStatus = typeof data.nextStatus === "string" && allowed.includes(data.nextStatus) ? data.nextStatus : null;
+    const reason = typeof data.reason === "string" ? data.reason : "";
+    return { nextStatus, reason };
+  } catch {
+    return null;
+  }
+}
+
 /** Call when generate() returned empty; returns a short message for the API response. */
 function getAIUnavailableMessage() {
   const hasGemini = !!process.env.GEMINI_API_KEY?.trim();
@@ -302,4 +340,14 @@ async function refineEmailWithAI(currentEmail, prompt) {
   return text || currentEmail;
 }
 
-module.exports = { parseResumeWithAI, extractProfileFromResume, analyzeJdWithAI, generateEmailWithAI, generateAIInsights, refineEmailWithAI, getAIUnavailableMessage, generateSubjectLinesWithAI };
+module.exports = {
+  parseResumeWithAI,
+  extractProfileFromResume,
+  analyzeJdWithAI,
+  generateEmailWithAI,
+  generateAIInsights,
+  refineEmailWithAI,
+  getAIUnavailableMessage,
+  generateSubjectLinesWithAI,
+  classifyEmailThreadWithAI,
+};

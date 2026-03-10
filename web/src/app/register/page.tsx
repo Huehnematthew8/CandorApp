@@ -169,7 +169,7 @@ export default function RegisterPage() {
 
         <p className="mt-6 text-center text-sm text-[var(--text-dim)]">
           Already have an account?{" "}
-          <Link href="/login" className="text-[var(--accent)] underline hover:no-underline">
+          <Link href="/login" className="inline-flex items-center rounded-md border border-[var(--border2)] bg-transparent px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] transition-colors hover:bg-[var(--surface2)] hover:text-[var(--text)]">
             Sign in
           </Link>
         </p>

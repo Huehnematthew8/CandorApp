@@ -1,5 +1,12 @@
 const express = require("express");
-const { generateEmailWithAI, generateAIInsights, refineEmailWithAI, getAIUnavailableMessage, generateSubjectLinesWithAI } = require("../lib/ai");
+const {
+  generateEmailWithAI,
+  generateAIInsights,
+  refineEmailWithAI,
+  getAIUnavailableMessage,
+  generateSubjectLinesWithAI,
+  classifyEmailThreadWithAI,
+} = require("../lib/ai");
 const { auth } = require("../middleware/auth");
 
 const router = express.Router();
@@ -75,6 +82,24 @@ router.post("/refine", auth, async (req, res) => {
   } catch (err) {
     console.error("Email refine error:", err);
     res.status(500).json({ error: err.message || "Refine failed" });
+  }
+});
+
+// Use AI + latest email thread to suggest status + comms updates for a company
+router.post("/update-from-thread", auth, async (req, res) => {
+  try {
+    const { thread, currentStatus } = req.body || {};
+    if (!Array.isArray(thread) || thread.length === 0) {
+      return res.status(400).json({ error: "No email thread provided" });
+    }
+    const suggestion = await classifyEmailThreadWithAI(thread, currentStatus);
+    if (!suggestion) {
+      return res.status(503).json({ error: getAIUnavailableMessage() });
+    }
+    res.json(suggestion);
+  } catch (err) {
+    console.error("update-from-thread error:", err);
+    res.status(500).json({ error: err.message || "Update from email failed" });
   }
 });
 

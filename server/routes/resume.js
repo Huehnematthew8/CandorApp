@@ -3,12 +3,11 @@ const fs = require("fs").promises;
 const path = require("path");
 const multer = require("multer");
 const pdfParse = require("pdf-parse");
-const { PrismaClient } = require("@prisma/client");
+const { prisma } = require("../lib/db");
 const { parseResumeWithAI, extractProfileFromResume } = require("../lib/ai");
 const { auth } = require("../middleware/auth");
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 const UPLOAD_DIR = path.join(__dirname, "..", "uploads", "resumes");
 

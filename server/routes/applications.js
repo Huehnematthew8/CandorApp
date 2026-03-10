@@ -1,11 +1,22 @@
 const express = require("express");
-const { PrismaClient } = require("@prisma/client");
+const { prisma } = require("../lib/db");
 const { auth } = require("../middleware/auth");
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 router.use(auth);
+
+/** Returns { company } or { error } for 404/forbidden. */
+async function getCompanyForUser(companyId, userId) {
+  const company = await prisma.company.findFirst({
+    where: { id: companyId },
+    include: { industry: true },
+  });
+  if (!company || company.industry.userId !== userId) {
+    return { error: "Company not found" };
+  }
+  return { company };
+}
 
 router.get("/industries", async (req, res) => {
   try {
@@ -65,7 +76,7 @@ router.delete("/industries/:id", async (req, res) => {
 
 router.post("/industries/:id/companies", async (req, res) => {
   try {
-    const { name, role, location, salary, jdText, jdAnalysis } = req.body;
+    const { name, role, location, salary, jdText, jdAnalysis, jobUrl } = req.body;
     const industry = await prisma.industry.findFirst({
       where: { id: req.params.id, userId: req.userId },
     });
@@ -79,6 +90,7 @@ router.post("/industries/:id/companies", async (req, res) => {
     };
     if (jdText !== undefined) data.jdText = jdText;
     if (jdAnalysis !== undefined) data.jdAnalysis = jdAnalysis;
+    if (jobUrl !== undefined) data.jobUrl = jobUrl || null;
     const company = await prisma.company.create({ data });
     res.json(company);
   } catch (err) {
@@ -88,18 +100,13 @@ router.post("/industries/:id/companies", async (req, res) => {
 
 router.put("/companies/:id", async (req, res) => {
   try {
+    const { company, error } = await getCompanyForUser(req.params.id, req.userId);
+    if (error) return res.status(404).json({ error });
     const {
       name, role, location, salary, status,
       emailTo, emailSubject, emailDraft, emailThread, savedTone,
-      appliedAt, jdText, jdAnalysis, country, visaRequired, workRights, interviewPrep,
+      appliedAt, jdText, jdAnalysis, jobUrl, country, visaRequired, workRights, interviewPrep,
     } = req.body;
-    const company = await prisma.company.findFirst({
-      where: { id: req.params.id },
-      include: { industry: true },
-    });
-    if (!company || company.industry.userId !== req.userId) {
-      return res.status(404).json({ error: "Company not found" });
-    }
     const data = {};
     if (name !== undefined) data.name = name;
     if (role !== undefined) data.role = role;
@@ -119,6 +126,7 @@ router.put("/companies/:id", async (req, res) => {
     if (savedTone !== undefined) data.savedTone = savedTone;
     if (jdText !== undefined) data.jdText = jdText;
     if (jdAnalysis !== undefined) data.jdAnalysis = jdAnalysis;
+    if (jobUrl !== undefined) data.jobUrl = jobUrl || null;
     if (country !== undefined) data.country = country;
     if (visaRequired !== undefined) data.visaRequired = visaRequired;
     if (workRights !== undefined) data.workRights = workRights;
@@ -133,16 +141,22 @@ router.put("/companies/:id", async (req, res) => {
   }
 });
 
+router.delete("/companies/:id", async (req, res) => {
+  try {
+    const { company, error } = await getCompanyForUser(req.params.id, req.userId);
+    if (error) return res.status(404).json({ error });
+    await prisma.company.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.put("/companies/:id/status", async (req, res) => {
   try {
+    const { company, error } = await getCompanyForUser(req.params.id, req.userId);
+    if (error) return res.status(404).json({ error });
     const { status } = req.body;
-    const company = await prisma.company.findFirst({
-      where: { id: req.params.id },
-      include: { industry: true },
-    });
-    if (!company || company.industry.userId !== req.userId) {
-      return res.status(404).json({ error: "Company not found" });
-    }
     const updated = await prisma.company.update({
       where: { id: req.params.id },
       data: { status },
@@ -155,14 +169,9 @@ router.put("/companies/:id/status", async (req, res) => {
 
 router.post("/companies/:id/notes", async (req, res) => {
   try {
+    const { company, error } = await getCompanyForUser(req.params.id, req.userId);
+    if (error) return res.status(404).json({ error });
     const { content } = req.body;
-    const company = await prisma.company.findFirst({
-      where: { id: req.params.id },
-      include: { industry: true },
-    });
-    if (!company || company.industry.userId !== req.userId) {
-      return res.status(404).json({ error: "Company not found" });
-    }
     const note = await prisma.note.create({
       data: { companyId: company.id, content: content || "" },
     });
@@ -174,14 +183,9 @@ router.post("/companies/:id/notes", async (req, res) => {
 
 router.post("/companies/:id/contacts", async (req, res) => {
   try {
+    const { company, error } = await getCompanyForUser(req.params.id, req.userId);
+    if (error) return res.status(404).json({ error });
     const { name, role, initials } = req.body;
-    const company = await prisma.company.findFirst({
-      where: { id: req.params.id },
-      include: { industry: true },
-    });
-    if (!company || company.industry.userId !== req.userId) {
-      return res.status(404).json({ error: "Company not found" });
-    }
     const contact = await prisma.contact.create({
       data: { companyId: company.id, name: name || "", role, initials },
     });

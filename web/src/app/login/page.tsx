@@ -140,11 +140,11 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm text-[var(--text-dim)]">
           No account?{" "}
-          <Link href="/register" className="text-[var(--accent)] underline hover:no-underline">
+          <Link href="/register" className="inline-flex items-center rounded-md border border-[var(--border2)] bg-transparent px-3 py-1.5 text-sm font-medium text-[var(--text-muted)] transition-colors hover:bg-[var(--surface2)] hover:text-[var(--text)]">
             Sign up
           </Link>
         </p>
-        <Link href="/" className="mt-4 block text-center text-xs text-[var(--text-dim)] underline hover:text-[var(--text-muted)]">
+        <Link href="/" className="mt-4 inline-flex w-full justify-center rounded-md border border-[var(--border2)] bg-transparent px-3 py-1.5 text-xs font-medium text-[var(--text-dim)] transition-colors hover:bg-[var(--surface2)] hover:text-[var(--text-muted)]">
           Back to home
         </Link>
 

@@ -16,6 +16,7 @@ export type EmailThreadType =
 
 export interface EmailThreadEntry {
   id: string;
+  kind?: "email";
   direction?: "sent" | "received";
   stage?: JobStatus;
   type?: EmailThreadType;
@@ -27,6 +28,20 @@ export interface EmailThreadEntry {
   wordCount?: number;
   from?: string;
 }
+
+export type ActivityType = "call" | "meeting" | "message" | "other";
+
+export interface ActivityEntry {
+  id: string;
+  kind: "activity";
+  activityType: ActivityType;
+  occurredAt: string;
+  title: string;
+  notes?: string | null;
+  contactId?: string | null;
+}
+
+export type ActivityFeedItem = EmailThreadEntry | ActivityEntry;
 
 export interface Industry {
   id: string;
@@ -65,10 +80,11 @@ export interface Company {
   email_to: string | null;
   email_subject: string | null;
   email_draft: string | null;
-  email_thread?: EmailThreadEntry[];
+  email_thread?: ActivityFeedItem[];
   saved_tone?: string | null;
   applied_at?: string | null;
   jd_text?: string | null;
+  job_url?: string | null;
   jd_analysis?: JdAnalysis | null;
   country?: string | null;
   visa_required?: boolean | null;

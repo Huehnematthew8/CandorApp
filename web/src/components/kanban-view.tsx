@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { useIndustriesContext } from "@/lib/IndustriesContext";
-import { STATUS_LABELS } from "@/lib/demo-data";
+import { STATUS_LABELS, STATUS_ORDER } from "@/lib/demo-data";
 import type { Company, JobStatus } from "@/lib/database.types";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const STATUS_ORDER: JobStatus[] = ["draft", "applied", "screening", "round1", "round2", "offer", "rejected"];
 
 const columnClass: Record<JobStatus, string> = {
   draft: "border-[var(--text-dim)]/30",

@@ -9,13 +9,12 @@ import { cn } from "@/lib/utils";
 const QUICK_ACTIONS = [
   { id: "board", label: "Go to Board", href: "/dashboard", icon: LayoutGrid },
   { id: "tracker", label: "All Jobs", href: "/dashboard/tracker", icon: List },
-  { id: "kanban", label: "Kanban", href: "/dashboard/kanban", icon: Columns3 },
   { id: "profile", label: "My Story", href: "/dashboard/profile", icon: User },
 ];
 
 export function CommandPalette() {
   const router = useRouter();
-  const { industries } = useIndustriesContext();
+  const { industries, openAddCompanyModal } = useIndustriesContext();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -49,6 +48,11 @@ export function CommandPalette() {
         setSelectedIndex(0);
         return;
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === "n") {
+        e.preventDefault();
+        openAddCompanyModal();
+        return;
+      }
       if (!open) return;
       if (e.key === "Escape") {
         close();
@@ -75,19 +79,19 @@ export function CommandPalette() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, total, selectedIndex, filteredItems, router, close]);
+  }, [open, total, selectedIndex, filteredItems, router, close, openAddCompanyModal]);
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-[15vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm pt-[15vh]"
       onClick={close}
       role="dialog"
       aria-label="Search"
     >
       <div
-        className="w-full max-w-xl rounded-xl border border-[var(--border2)] bg-[var(--surface)] shadow-xl"
+        className="w-full max-w-xl rounded-[var(--radius-xl)] border border-[var(--border2)] bg-[var(--surface)] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.5)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2">
@@ -126,7 +130,7 @@ export function CommandPalette() {
           )}
         </div>
         <div className="border-t border-[var(--border)] px-3 py-1.5 text-[10px] text-[var(--text-dim)]">
-          ↑↓ navigate · Enter select · ⌘K toggles
+          ↑↓ navigate · Enter select · ⌘K palette · ⌘N add company · 1–6 tabs on board
         </div>
       </div>
     </div>

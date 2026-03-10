@@ -19,12 +19,12 @@ export default function DashboardLayout({
             <CommandPalette />
             <div className="flex h-screen flex-col overflow-hidden bg-[var(--bg)]">
               <header
-                className="flex h-[52px] shrink-0 items-center gap-6 border-b border-[var(--border)] bg-[var(--bg)] px-6"
+                className="flex h-14 shrink-0 items-center gap-8 border-b border-[var(--border)] bg-[var(--surface)]/80 px-6 backdrop-blur-sm"
                 style={{ zIndex: 10 }}
               >
-                <div className="topnav-brand mr-auto flex items-center gap-2">
+                <div className="topnav-brand mr-auto flex items-center gap-2.5">
                   <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-                  <span className="font-serif text-[15px] text-[var(--text)]">Candor</span>
+                  <span className="font-serif text-[15px] font-normal tracking-tight text-[var(--text)]">Candor</span>
                 </div>
 
                 <DashboardNav />

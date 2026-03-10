@@ -95,14 +95,47 @@ export const DEMO_INDUSTRIES: Industry[] = [
   },
 ];
 
+export const STATUS_ORDER: JobStatus[] = ["draft", "applied", "screening", "round1", "round2", "offer", "rejected"];
+
 export const STATUS_LABELS: Record<JobStatus, string> = {
   draft: "Draft",
   applied: "Applied",
-  screening: "Screening",
-  round1: "Round 1",
-  round2: "Round 2",
+  screening: "In process",
+  round1: "Interview 1",
+  round2: "Interview 2+",
   offer: "Offer",
-  rejected: "Rejected",
+  rejected: "Archived",
+};
+
+/** Status dot (sidebar list) and select/chevron (dropdowns) - shared by board and tracker */
+export const statusDotClass: Record<JobStatus, string> = {
+  draft: "bg-[var(--text-dim)]",
+  applied: "bg-[var(--blue)]",
+  screening: "bg-[var(--amber)]",
+  round1: "bg-[var(--purple)]",
+  round2: "bg-[var(--accent)]",
+  offer: "bg-[var(--green)] animate-[pulse_2s_ease_infinite]",
+  rejected: "bg-[var(--red)]",
+};
+
+export const statusSelectClass: Record<JobStatus, string> = {
+  draft: "border-[var(--border2)] bg-[var(--surface2)] text-[var(--text-muted)]",
+  applied: "border-[var(--blue)]/30 bg-[var(--blue-dim)] text-[var(--blue)]",
+  screening: "border-[var(--amber)]/30 bg-[var(--amber-dim)] text-[var(--amber)]",
+  round1: "border-[var(--purple)]/30 bg-[var(--purple-dim)] text-[var(--purple)]",
+  round2: "border-[var(--accent)]/30 bg-[var(--accent-glow)] text-[var(--accent)]",
+  offer: "border-[var(--green)]/30 bg-[var(--green-dim)] text-[var(--green)]",
+  rejected: "border-[var(--red)]/30 bg-[var(--red-dim)] text-[var(--red)]",
+};
+
+export const statusChevronClass: Record<JobStatus, string> = {
+  draft: "text-[var(--text-muted)]",
+  applied: "text-[var(--blue)]",
+  screening: "text-[var(--amber)]",
+  round1: "text-[var(--purple)]",
+  round2: "text-[var(--accent)]",
+  offer: "text-[var(--green)]",
+  rejected: "text-[var(--red)]",
 };
 
 export type ProfileTimelineItem = {
@@ -161,7 +194,8 @@ export const DEFAULT_PROFILE: ProfileData = {
   templates: [],
 };
 
-export const PROFILE_DATA: ProfileData = {
+/** Demo profile (e.g. for tests or placeholder). Not used by app. */
+const PROFILE_DATA: ProfileData = {
   name: "Jordan Davis",
   headline: "Senior Product Designer · 6 years experience",
   narrative:
