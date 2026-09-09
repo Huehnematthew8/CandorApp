@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=DM+Serif+Display:ital@0;1&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #0C0C0E;
+    --surface: #141418;
+    --surface2: #1C1C22;
+    --surface3: #24242C;
+    --border: rgba(255,255,255,0.06);
+    --border2: rgba(255,255,255,0.12);
+    --text: #E8E8E4;
+    --text-muted: #9B9A97;
+    --text-dim: #5C5C58;
+    --accent: #C8A97E;
+    --accent-glow: rgba(200,169,126,0.15);
+
+    /* Status colors */
+    --status-draft-dot: #5C5C58;
+    --status-draft-bg: rgba(92,92,88,0.12);
+    --status-applied-dot: #5B8DEF;
+    --status-applied-bg: rgba(91,141,239,0.12);
+    --status-interviewing-dot: #D9853B;
+    --status-interviewing-bg: rgba(217,133,59,0.12);
+    --status-offer-dot: #4DA34D;
+    --status-offer-bg: rgba(77,163,77,0.12);
+    --status-rejected-dot: #C9515B;
+    --status-rejected-bg: rgba(201,81,91,0.12);
+
+    /* Shadcn variables mapped to our theme */
+    --background: var(--bg);
+    --foreground: var(--text);
+    --card: var(--surface);
+    --card-foreground: var(--text);
+    --popover: var(--surface2);
+    --popover-foreground: var(--text);
+    --primary: var(--accent);
+    --primary-foreground: var(--bg);
+    --secondary: var(--surface2);
+    --secondary-foreground: var(--text);
+    --muted: var(--surface);
+    --muted-foreground: var(--text-muted);
+    --accent: var(--accent);
+    --accent-foreground: var(--bg);
+    --destructive: var(--status-rejected-dot);
+    --destructive-foreground: var(--text);
+    --border: var(--border);
+    --input: var(--surface2);
+    --ring: var(--accent);
+    --radius: 8px;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-[var(--bg)] text-[var(--text)] font-sans;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* Themed scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--surface);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border2);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-dim);
+  }
+
+  /* Transition defaults */
+  * {
+    transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out, box-shadow 150ms ease-out;
+  }
+}

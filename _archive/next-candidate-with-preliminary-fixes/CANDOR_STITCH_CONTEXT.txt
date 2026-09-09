@@ -1,0 +1,1465 @@
+================================================================================
+CANDOR — COMPLETE PRODUCT CONTEXT FOR UI GENERATION
+================================================================================
+Last updated: March 2026
+Owner: Matthew Huehne
+Purpose: Complete context document for Google Stitch UI generation
+
+This document describes every screen, component, interaction, data model,
+design token, user flow, and planned feature in the Candor application.
+Build the UI exactly as described here.
+
+================================================================================
+SECTION 1 — WHAT IS CANDOR
+================================================================================
+
+Candor is a web application for job seekers that replaces the manual middle
+layer of a job search — the spreadsheets, scattered emails, and notes that
+most people currently use to track applications.
+
+Tagline: "Apply with intention, not volume."
+
+The core problem: Job searching is mentally exhausting not because applying
+is hard, but because the administrative overhead is enormous. People manage
+applications across 5–6 different tools and constantly lose track of where
+things stand, what to do next, and why they wanted a role in the first place.
+Candor replaces all of that with one place that thinks alongside you.
+
+What makes it different:
+
+1. STORY-DRIVEN, NOT SPREADSHEET-DRIVEN.
+   The "My Story" profile — built from your resume and edited by you — powers
+   AI email drafting, fit scoring, and narrative. You are not just logging
+   applications; you are building a coherent picture of who you are and what
+   you want.
+
+2. PUSHES BACK ON LOW-QUALITY APPLICATIONS.
+   A required "why this role?" field on every job, a personalisation score on
+   every email, and a nudge that says "always edit before sending" are
+   deliberate friction points. Candor is explicitly not a spray-and-pray tool.
+
+3. FOLLOWS YOUR PROCESS, NOT A FIXED ONE.
+   Every company gets a custom stage pipeline built as you go — not a global
+   Kanban board that breaks when one company has 5 rounds and another has 1.
+
+4. CHANNEL-AWARE ACTIVITY LOG.
+   Every touchpoint — email, call, portal submission, file sent — is logged in
+   one unified place. The AI drafter only activates for written communication.
+
+================================================================================
+SECTION 2 — TARGET USER
+================================================================================
+
+Primary: Recent graduates and early-career professionals (0–3 years experience)
+actively job searching. Applying to 10–50 roles over 3–6 months.
+
+Secondary: Mid-career professionals changing roles.
+
+Profile:
+- Applying across multiple companies and industries simultaneously
+- Managing a mix of email, phone, and portal-based communications
+- Currently tracking in Google Sheets or not at all
+- Willing to pay for genuine competitive advantage
+- Primarily on desktop during active job search sessions
+- Australian market primary, globally applicable
+
+What they care about most:
+1. Knowing where things stand without having to remember
+2. Not missing follow-ups or opportunities
+3. Writing emails that feel authentic, not AI-generated
+4. Understanding which applications are worth prioritising
+5. Feeling like they are making progress, not just sending into the void
+
+================================================================================
+SECTION 3 — DESIGN SYSTEM
+================================================================================
+
+AESTHETIC:
+- Dark editorial. Not "dark mode SaaS." Think a high-end editorial magazine
+  that happens to be an app.
+- Warm dark backgrounds (not pure black — slightly warm grey-black)
+- Gold as the primary accent colour — not yellow, not orange, muted antique gold
+- Minimal colour use — colour carries meaning (status, urgency, success)
+- No gradients except for very subtle surface differentiation
+- Clean typographic hierarchy with clear serif/sans-serif contrast
+
+TYPOGRAPHY:
+- Display / headings / company names / brand: Instrument Serif (Google Fonts)
+  - Used for: the "Candor" logo, company names in detail view, page titles,
+    the My Story narrative, section headers like "Applications"
+- Body / UI / labels / buttons: DM Sans (Google Fonts)
+  - Used for: everything else — inputs, labels, badges, body text
+
+COLOUR TOKENS (CSS custom properties):
+
+  Backgrounds / Surfaces:
+  --bg:    #111114   (page background — very dark warm near-black)
+  --s1:    #17171b   (secondary surfaces — slightly lifted)
+  --s2:    #1e1e22   (inputs, card backgrounds)
+  --s3:    #252529   (active/hover states)
+  --s4:    #2c2c31   (hover on already-dark elements)
+
+  Text:
+  --t1:    #edeae3   (primary text — warm near-white)
+  --t2:    #9b98a4   (secondary text — mid-grey)
+  --t3:    #635f6e   (placeholder / dim / tertiary)
+
+  Accent — Gold:
+  --gold:  #c9aa7e   (primary accent — antique gold)
+  --gold2: #e3c99a   (gold hover state — brighter)
+  --gold3: #f1dfc0   (light gold — very subtle tints)
+
+  Status colours (each has a solid and a 13% opacity "dim" variant):
+  --green:  #4ea375   (offer, success, complete)
+  --gd:     rgba(78,163,117,0.13)
+  --blue:   #5d90d6   (applied)
+  --bd:     rgba(93,144,214,0.13)
+  --amber:  #d6905c   (interview, warning)
+  --ad:     rgba(214,144,92,0.13)
+  --purple: #8e74d6   (round 2, task type)
+  --pd:     rgba(142,116,214,0.13)
+  --red:    #c46060   (rejected, error)
+  --rdd:    rgba(196,96,96,0.13)
+  --teal:   #4aacb0   (screening)
+  --td:     rgba(74,172,176,0.13)
+
+  Borders (rgba white, never solid colour):
+  --b1:    rgba(255,255,255,0.07)   (subtle border)
+  --b2:    rgba(255,255,255,0.12)   (normal border)
+  --b3:    rgba(255,255,255,0.19)   (strong/active border)
+
+  Glows:
+  --glow:  rgba(201,170,126,0.10)   (gold glow)
+  --glow2: rgba(201,170,126,0.05)   (subtle gold glow)
+
+BORDER RADIUS RULES:
+- Page/section containers: 10–13px
+- Cards and input fields: 7–10px
+- Small chips/badges: 6–7px
+- Buttons that are wider: 8px
+- Pill shapes (status badges, filter pills, small tags): 100px
+- Icon buttons (square): 7–8px
+
+SPACING:
+- Nav height: 52–54px
+- Standard padding inside cards: 12–16px
+- Gap between stacked sections: 16–20px
+- Inline element gap: 6–10px
+
+ANIMATIONS (all CSS keyframes):
+- `up`: opacity 0→1 + translateY(10px→0) — page/section entrance
+- `fade`: opacity 0→1 — simple fade
+- `slidein`: opacity 0→1 + translateX(16px→0) — detail panel slide from right
+- `slidedown`: translateY(-8px→0) — dropdowns
+- `spin`: full 360 rotation — loading spinners
+- `gw`: width 0→100% — progress bar fill animation
+- `pulse`: box-shadow 0→gold glow pulse — active state on logo dot
+- `breathe`: opacity 0.5→1 pulse — subtle breathing effect
+- `dropdown-in`: scale(0.95→1) + translateY(-4px→0) — dropdown menus
+- `modal-in`: scale(0.96→1) + translateY(8px→0) + opacity — modal entrance
+
+MICRO-INTERACTIONS:
+- Every button has a hover state: background lift, color shift, or translateY(-1px)
+- Active/pressed states: translateY(0) or background darken
+- All transitions: 0.12–0.2s ease
+- Destructive hover (delete, reject): turns red/rdd on hover
+- Gold buttons: lighten to --gold2 on hover
+- Ghost buttons: border brightens, text lightens on hover
+- Icon buttons: scale(1.1) on hover, scale(0.95) on press
+
+STATUS BADGE DESIGN:
+- Pill shape (border-radius: 100px)
+- Small coloured dot (5–6px circle) on the left
+- Status label text
+- Background tint at 13% opacity of the status colour
+- Text colour matches the status colour (slightly lighter than dot)
+
+  saved     → dot: --t3,    bg: rgba(--t3, 0.13),    label: "Saved"
+  applied   → dot: --blue,  bg: --bd,                label: "Applied"
+  screening → dot: --teal,  bg: --td,                label: "Screening"
+  interview → dot: --amber, bg: --ad,                label: "Interview"
+  round1    → dot: --amber, bg: --ad,                label: "Round 1"
+  round2    → dot: --purple,bg: --pd,                label: "Round 2"
+  offer     → dot: --green, bg: --gd,                label: "Offer"
+  rejected  → dot: --red,   bg: --rdd,               label: "Rejected"
+
+BUTTON STYLES:
+
+  .btn-gold (primary action):
+    background: --gold
+    color: #18120a (very dark brown-black)
+    border: none
+    border-radius: 8px (or 100px for pill shape)
+    font-weight: 600
+    hover: background --gold2, translateY(-1px)
+    active: translateY(0)
+
+  .btn-ghost (secondary action):
+    background: transparent
+    color: --t2
+    border: 1px solid --b2
+    hover: color --t1, border --b3, background --s3
+    active: background --s2
+
+  .btn-icon (icon-only button, 32×32px):
+    background: --s2
+    border: 1px solid --b1
+    border-radius: 7px
+    color: --t3
+    hover: background --s3, border --b2, color --t1
+
+  .input-field (all inputs and textareas):
+    background: --s2
+    border: 1px solid --b1
+    border-radius: 8px
+    color: --t1
+    placeholder color: --t3
+    focus: border-color --b3 (no box-shadow, clean focus)
+    font-family: DM Sans
+
+================================================================================
+SECTION 4 — APPLICATION STRUCTURE & PAGES
+================================================================================
+
+The app has these routes:
+
+  /            → redirects to /dashboard (if authed) or /login
+  /login       → login page
+  /signup      → signup page
+  /auth/callback → Supabase email confirmation handler
+  /dashboard   → main application (table + detail)
+  /story       → My Story profile page
+
+ROUTING LOGIC:
+- Unauthenticated users trying to access /dashboard or /story → redirect to /login
+- Authenticated users hitting /login or /signup → redirect to /dashboard
+
+================================================================================
+SECTION 5 — LOGIN PAGE (/login)
+================================================================================
+
+Full-page dark layout. Centered vertically and horizontally.
+Subtle particle animation in the background (small floating dots in gold/
+warm colors drifting upward slowly — like embers or fireflies).
+
+Components:
+- "Candor" in Instrument Serif, ~32px, --gold colour, centered at top of card
+- Tagline: "Apply with intention, not volume." — --t3, 13px, italic
+- Card: ~380px wide, --s1 background, 1px --b1 border, 12px radius, 32px padding
+- Email input (full width, labeled)
+- Password input (full width, labeled)
+- "Sign in" button (full width, .btn-gold)
+- "Don't have an account? Sign up →" link at bottom (--t3 text, --gold arrow)
+- On error: inline red error message below the form
+- On success: redirect to /dashboard with loading spinner shown during transition
+
+LOADING STATE (sign in transition):
+- When sign in is processing, show a full-screen overlay with:
+  - The Candor "C" mark or logo centered
+  - A subtle loading spinner (gold)
+  - Text below: "Signing you in..." or "Welcome back to Candor"
+  - Smooth fade in/out transition
+- This prevents the jarring blank white flash during auth redirect
+
+================================================================================
+SECTION 6 — SIGNUP PAGE (/signup)
+================================================================================
+
+Same aesthetic as login. Card with:
+- "Create your account" heading (Instrument Serif)
+- Sub-copy: "Track every application. Write better emails. Land the right role."
+- Email input
+- Password input (min 8 chars)
+- Confirm password input
+- "Create account" button (full width, .btn-gold)
+- "Already have an account? Sign in →" link
+- On success: show confirmation message — "Check your email to verify your
+  account. We've sent a link to [email]." (no redirect, stays on page)
+
+================================================================================
+SECTION 7 — DASHBOARD PAGE (/dashboard)
+================================================================================
+
+The dashboard is a single page that shows either the TABLE VIEW or the
+DETAIL VIEW depending on whether a job is selected. No sidebar ever.
+Full viewport width used at all times.
+
+The top navigation is always visible (fixed position, 52px height).
+
+================================================================================
+SECTION 8 — TOP NAVIGATION
+================================================================================
+
+Fixed at top. Height: 52–54px. Background: --bg with bottom border (1px --b1).
+Z-index: above all content.
+
+LEFT SIDE:
+- "Candor" in Instrument Serif, 18px, --gold colour
+- Small pulsing gold dot immediately left of the C (5px, pulse animation)
+- Clicking the logo/name → deselects current job → returns to table view
+
+CENTER:
+- URL import bar. Max width: 420–480px. Full width within center zone.
+- Left icon: link/chain icon in --t3
+- Input: placeholder "Paste a job URL to import instantly..."
+  (LinkedIn, Seek, Greenhouse, etc.)
+- Right: "Import" button (.btn-ghost, small)
+- On submit: shows loading spinner inside the input, then opens Add Job modal
+  with fields pre-filled from AI extraction
+- On error: small red text below "Couldn't fetch that URL — fill in manually"
+
+RIGHT SIDE (left to right):
+1. Stats display: "Applied · Interviews · Offers" with coloured dots
+   - Format: "12 Applied · 3 Interviews · 1 Offer"
+   - Applied: --blue dot, Interview: --amber dot, Offer: --green dot
+   - Font: 11px, --t3 colour, each number slightly brighter (--t2)
+
+2. "Connect Gmail" button (pill, .btn-ghost, small):
+   - First click: turns green, changes to "Scan inbox", shows toast "Gmail connected ✓"
+   - Second click: opens Gmail Scan Modal (see Section 15)
+   - When connected: green dot appears on button
+
+3. Groups button: shows group count badge. Opens groups dropdown/sidebar.
+
+4. "Add Job" button (.btn-gold, pill shape, 11–12px font):
+   - Opens Add Job Modal (see Section 14)
+
+5. Avatar circle (32px, gradient background, initials "MH"):
+   - Click → dropdown menu:
+     - "My Story" → navigates to /story
+     - "Settings" → (future feature, placeholder)
+     - Divider
+     - "Sign out" → Supabase signOut → redirect to /login
+
+================================================================================
+SECTION 9 — TABLE VIEW (DEFAULT DASHBOARD STATE)
+================================================================================
+
+Shown when no job is selected. Full width below the nav.
+
+TOOLBAR (below nav, above table):
+- Left: "Applications" title (Instrument Serif, 20px) + count badge (pill, --s3 bg)
+- Center: Filter pills (horizontal row, gap 4px):
+  All (default) / Saved / Applied / Interview / Offer / Rejected
+  Active pill: --gold border + --gold text
+  Inactive: .btn-ghost small
+- Right: Search input (.input-field, ~200px wide, magnifying glass icon)
+  Live filters on company name + role as you type
+
+TABLE STRUCTURE:
+Full width table. Row height ~48px. Hover: background --s1.
+Clicking a row opens that job's Detail View.
+
+Columns (all headers are sortable by clicking — show ↑↓ sort arrows on hover):
+
+  1. COMPANY (widest column, ~240px min):
+     - Emoji logo (22px, in a 32px rounded square with --s2 background)
+     - Company name (13px, --t1, semi-bold, DM Sans)
+     - Role below (11px, --t3)
+     - Inline editing: double-click company name → editable field
+
+  2. GROUP (~100px):
+     - Group emoji + group name in a small pill (--s2 bg, --b1 border, 6px radius)
+     - If no group: empty cell (dim dash)
+
+  3. STATUS (~100px):
+     - StatusBadge component (dot + label + tinted pill background)
+
+  4. DAYS (~70px):
+     - Number of days since applied_at date
+     - If status is "applied" AND days ≥ 10: amber text + ⚠ warning icon
+     - If not applied yet: dash
+
+  5. LOCATION (~120px):
+     - Location string in --t2
+     - Empty: dash
+
+  6. SALARY (~100px):
+     - Salary range in --gold colour
+     - Empty: dash
+
+  7. LAST ACTIVITY (~200px):
+     - Date + interaction subject, truncated to ~40 chars
+     - Date in --t3, subject in --t2
+     - No activity: "—"
+
+  8. FIT (~60px):
+     - Percentage badge
+     - ≥80%: green background/text
+     - ≥60%: amber background/text
+     - >0% and <60%: red background/text
+     - 0%: grey (not scored yet)
+
+CONTEXT MENU (right-click a row):
+- "Change status" → nested dropdown with all 8 statuses
+- "Move to group" → nested dropdown with all groups
+- "Delete" → confirmation step
+
+DELETE ON ROW HOVER:
+- Hover reveals a small trash icon on the far right of the row
+- Clicking shows inline confirmation: "Delete?" [Cancel] [Delete]
+
+EMPTY STATE:
+- Centered in the table area
+- Large emoji: 📋
+- Title: "No applications yet" (Instrument Serif, --t2)
+- Subtitle: "Paste a job URL above or click Add Job to get started." (--t3, 13px)
+
+TABLE GROUPS (if user has groups):
+- Jobs can optionally be grouped visually — a subtle group header row
+  showing emoji + group name with a count badge
+- Each group section can be collapsed (chevron on the left)
+- "No Group" is its own section at the bottom
+
+================================================================================
+SECTION 10 — DETAIL VIEW
+================================================================================
+
+Replaces the table view when a job is selected.
+Slides in from the right (slidein animation — translateX 16→0px + opacity).
+Full width, full height below nav.
+
+BREADCRUMB BAR (40px, --s1 background, bottom border 1px --b1):
+  "← Applications / CompanyName · GroupEmoji GroupName"
+  - "← Applications" is clickable → returns to table, deselects job
+  - "/" is separator in --t3
+  - CompanyName in --t1
+  - "·" separator
+  - GroupEmoji + GroupName in --t2
+  - Font: 12px DM Sans
+
+DETAIL HEADER (padding 16px 20px, bottom border 1px --b1):
+Left side:
+  - Logo: emoji in a 48px rounded square (10px radius, --s2 bg, 1px --b1 border)
+    Clicking the logo opens the emoji picker to change it
+  - Company name: Instrument Serif, 22px, --t1
+  - Role: 14px, --t2, below company name
+  - Location · Salary: 12px, inline below role
+    Salary shown in --gold colour
+    Both are click-to-edit (click → shows inline input field, dashed underline
+    indicator when editable)
+
+Right side (vertically centered, gap 8px):
+  - Communication button: opens Communication Menu (4 options)
+  - "Log" button (.btn-ghost, small): opens Log Interaction Modal
+  - Status dropdown (StatusBadge that opens a dropdown on click)
+
+STAGE TRACK (below header, padding 12px 20px, bottom border 1px --b1):
+Horizontal scrollable row of stage nodes.
+
+Each stage node:
+  - Small circle dot (8px)
+  - Stage name (10px, below dot)
+  - Clicking a stage marks it as the active stage for this job
+
+  Color states:
+  - Active: --gold border + --gold text + subtle gold glow background
+  - Completed (before active): --green dot + --green text, strikethrough line
+  - Future (after active): --t3 dot + --t3 text
+  - interview type: --amber
+  - test type: --amber
+  - task type: --purple
+  - call type: --teal
+
+Connector lines between stages:
+  - Green when stage is completed
+  - --b1 when not reached yet
+
+"+ Add stage" button at end: .btn-ghost small, always visible
+
+If no stages: show "+ Add first stage" centered with dim text
+
+TWO TABS (below stage track):
+  - "Overview" | "Activity"
+  - Active tab: --t1 text + 2px --gold underline
+  - Inactive: --t3 text, hover --t2
+  - Tab bar: border-bottom 1px --b1
+
+================================================================================
+SECTION 11 — OVERVIEW TAB
+================================================================================
+
+Scrollable column. Max-width: 900px. Padding: 20px 24px. Gap: 16px.
+
+COMPONENTS IN ORDER (top to bottom):
+
+--- 1. NEXT ACTION CARD (conditional — only shows when there's a clear action) ---
+
+Gold-tinted card (background: --gd or rgba(201,170,126,0.06)).
+Border: 1px solid rgba(201,170,126,0.2).
+Border-radius: 10px. Padding: 14px 16px.
+
+Left: small lightning bolt icon in --gold
+Label: "NEXT ACTION" in 9px uppercase gold
+Message: 14px --t1 Instrument Serif italic
+
+Right: CTA button (.btn-gold, small)
+
+State table:
+  status = saved:
+    Message: "You haven't applied yet. Ready to write your cover letter?"
+    Button: "Draft now" → switches to Activity tab, opens Cover Letter drafter
+
+  status = applied AND days ≥ 10:
+    Message: "X days since you applied — time to send a follow-up."
+    Button: "Draft follow-up" → switches to Activity tab, opens Email drafter
+
+  status = interview / round1 / round2:
+    Message: "Interview stage — review your notes and prep a thank you email."
+    Button: "View activity" → switches to Activity tab
+
+  status = offer:
+    Message: "You have an offer. Time to negotiate or confirm."
+    Button: "Draft response" → switches to Activity tab
+
+--- 2. FOLLOW-UP WARNING BANNER (conditional) ---
+
+Shows if: status = "applied" AND days since applied ≥ 10.
+Amber-tinted card (--ad background, amber border).
+Text: "X days since you applied. Consider sending a follow-up →"
+Clicking the banner switches to Activity tab.
+
+--- 3. WHY THIS ROLE ---
+
+Card: --s2 bg, 1px --b1 border, 10px radius, 13–15px padding.
+Header: "WHY THIS ROLE" in 9px uppercase --gold letterSpacing: 0.1em
+Below: contenteditable div.
+  - Italic style, --t2 colour, 13px, lineHeight 1.65
+  - Placeholder text if empty: "Add why this role matters to you..."
+  - Saves to database on blur
+  - Supports rich text: Cmd+B = bold, "- " at line start = bullet point (•)
+  - The "why" is used by AI when drafting emails — it's important
+
+--- 4. INFO GRID (1 row, 4 equal cells) ---
+
+4-cell horizontal grid. Each cell: --s2 bg, 1px --b1 border, 8px radius.
+padding: 10px 14px. Gap: 8px.
+
+Cell 1 — Status:
+  - "STATUS" label (8px uppercase --t3)
+  - StatusBadge component below
+
+Cell 2 — Applied Date:
+  - "APPLIED" label (8px uppercase --t3)
+  - Date string (12px --t1) or "Not yet"
+  - "X days ago" subtext (10px --t3)
+
+Cell 3 — Location:
+  - "LOCATION" label
+  - Location string (12px --t1) or dash
+
+Cell 4 — Salary:
+  - "SALARY" label
+  - Salary in --gold (12px) or dash
+
+--- 5. JD ANALYSIS ---
+
+Three states:
+
+STATE A — Empty (no JD added yet):
+  Card with dashed border (2px dashed --b2), 10px radius, padding 20px, centered.
+  Icon: document with magnifying glass (dim colour)
+  Title: "Paste the job description" (14px, --t2, Instrument Serif)
+  Subtitle: "Get a fit score, keyword match, and a suggested application angle." (12px, --t3)
+  Button: "Add JD →" (.btn-ghost)
+
+STATE B — Input (user clicked Add JD):
+  Textarea for pasting JD (full width, min 120px, .input-field)
+  "Analyse against my profile" button (.btn-gold)
+  Shows loading spinner during analysis (POST to /api/ai/analyse-jd)
+  "← Back" link to return to empty state
+
+STATE C — Result:
+  Fit score ring: a circle with conic-gradient fill showing the score %.
+    - Fill colour: ≥80 = --green, ≥60 = --amber, <60 = --red
+    - Center text: "XX%" in Instrument Serif, large, matching colour
+    - Ring size: ~80px diameter, stroke width ~8px
+    - Label below: "Fit Score"
+
+  "Matched Keywords" section:
+    - Label + green pills for each matched keyword
+    - Pills: --gd background, --green text, 100px radius, 10px font
+
+  "Gaps" section:
+    - Label + red pills for missing keywords
+    - Pills: --rdd background, --red text
+
+  "Suggested Angle" section:
+    - 1–2 sentence text in --t2, italic
+    - Boxed in --s2 with left gold border accent (3px)
+
+  Footer: "Re-analyse" button (small, .btn-ghost)
+
+--- 6. NOTES ---
+
+Section header: "NOTES" (9px uppercase --t3) with horizontal rule line.
+
+Input area:
+  - RichEditor (contenteditable div styled like a textarea)
+  - Placeholder: "Add a note... (- for bullets, ⌘B to bold)"
+  - Padding: 9px 11px 32px (extra bottom for the save button)
+  - Background: --s2, border 1px --b1, borderRadius 7px
+  - Min height: 72px
+  - Bottom right: "↵ to save" hint text + "Save" button (pill)
+  - Pressing Enter saves the note (not Shift+Enter)
+  - Save button: --s3 bg when empty (disabled), --gold when has content
+
+Saved notes list (below input, reverse chronological):
+  Each note card:
+  - Background: --s1 (hover: --s2)
+  - Border: 1px --b1 (active edit: --gold border)
+  - Padding: 10px 12px, border-radius 7px
+  - Note text rendered as HTML (bold/bullets supported)
+  - On hover: edit icon + delete icon appear top-right (opacity transition)
+  - Edit mode: note becomes RichEditor inline with Save/Cancel buttons
+  - Delete: shows "Delete this note?" with Delete/Cancel confirmation inline
+  - Transition: all 0.15s ease on all hover states
+
+================================================================================
+SECTION 12 — ACTIVITY TAB
+================================================================================
+
+Three-column flex layout. Each column handles its own overflow/scroll.
+No outer scrolling — the tab fills the remaining height below the tab bar.
+
+COLUMN 1 — INTERACTION LOG (210px wide, border-right 1px --b1):
+
+Header (padding 12px 16px, border-bottom 1px --b1):
+  - "Timeline" label (10px uppercase --t3)
+  - "Log" button (pill, .btn-ghost, small) → opens Log Interaction Modal
+
+Scrollable list of interaction entries (padding 8px):
+Each entry (padding 8px 10px, borderRadius 8px, gap 10px, hover --s2):
+  - Channel icon in a coloured square (28px, 6px radius):
+    email → --bd bg + --blue icon
+    call → --gd bg + --green icon
+    message → --td bg + --teal icon
+    portal → --pd bg + --purple icon
+    file → --ad bg + --amber icon
+  - Right of icon:
+    - Type label (11px, --t1, semi-bold)
+    - Subject truncated to 30 chars (11px, --t3) if exists
+    - Date (10px, --t3, right-aligned)
+  - Selected entry: --s2 bg + 1px --gold border
+
+Empty state (centered, padding 32px):
+  - Icon (large, dim)
+  - "No interactions yet" (13px, --t3)
+  - "Log your first above" (11px, --t3)
+
+COLUMN 2 — DRAFTER / LOG VIEW (flex: 1, min-width 0):
+
+This column shows different things based on what's selected:
+
+STATE A — EMPTY (nothing selected):
+  Centered vertically and horizontally in the column.
+  Label: "Start a communication" (14px, --t3, Instrument Serif)
+
+  QUADRANT BUTTONS (2×2 grid, each button ~50% width):
+  These 4 buttons are the main entry points for communication tools.
+  They need hover animation — a subtle background lift + border brighten.
+
+    [Cover Letter]       [Email Draft]
+    [Interview Prep]     [Call Prep]
+
+  Each button:
+  - --s2 background
+  - 1px --b1 border
+  - 10px border-radius
+  - Emoji + label + description subtext
+  - Hover: background --s3, border --b2, translateY(-1px)
+  - Active: translateY(0)
+
+  Cover Letter: 📝 "Cover Letter" / "First impression"
+  Email Draft:  ✉️ "Email Draft" / "Follow-up or outreach"
+  Interview Prep: 🎯 "Interview Prep" / "Prepare and practice"
+  Call Prep:    📞 "Call Prep" / "Phone or video call"
+
+STATE B — EMAIL DRAFTER:
+Full height flex column.
+
+  Top bar (border-bottom 1px --b1, padding 12px 16px):
+    - Stage label (varies by job status — see table below)
+    - Stage description (12px, --t3)
+    - Tone pills: Professional | Warm | Assertive | Enthusiastic | Grateful
+      Active tone: --gold border + --gold text
+      Inactive: .btn-ghost tiny
+
+  Stage label/description table:
+    saved      → "Cover Letter"     / "First impression — lead with your why"
+    applied    → "Follow-up"        / "Brief nudge — add one new insight"
+    screening  → "Pre-screen note"  / "Show genuine curiosity about the team"
+    interview  → "Thank You"        / "Reference something specific from the chat"
+    round1     → "Thank You"        / "Reference something specific from the chat"
+    round2     → "Thank You — Round 2" / "Reinforce fit, signal you want this"
+    offer      → "Negotiation"      / "Acknowledge warmly, state your case"
+    rejected   → "Keep the door open" / "Gracious — leave a lasting impression"
+
+  JD context bar (if JD exists, amber-tinted, collapsible):
+    "📄 JD: [truncated job description preview]..."
+    Click to expand/collapse
+
+  Fields area (padding 12px 16px):
+    To: input (pre-filled with "hiring@[company].com")
+    Subject: input
+
+  Body area (flex: 1, padding 0 16px 16px):
+    Large textarea/contenteditable. Min 120px.
+    Empty state overlay: "Ready to draft" with AI sparkle icon + "Generate" button
+
+    During generation: typewriter animation (text appears character by character)
+
+    Personalisation score (small, below body):
+      Low: if company name not in body → red "Low" badge
+      Good: if company mentioned → amber "Good" badge
+      Strong: if mentioned + >280 chars → green "Strong" badge
+
+  Nudge bar (amber tint, padding 8px 12px):
+    ⚡ "Always edit before sending — your voice matters more than the AI's."
+
+  Bottom bar (border-top 1px --b1, padding 10px 16px):
+    Left: word count (11px, --t3) + personalisation badge
+    Right: Regenerate | Copy | "Send & Log" (.btn-gold)
+
+STATE C — COVER LETTER DRAFTER:
+  Same structure as Email Drafter but:
+  - No "To" / "Subject" fields
+  - Stage always shows "Cover Letter"
+  - Generate prompt uses "first impression" context
+  - Output is longer format (3–4 paragraphs)
+
+STATE D — INTERVIEW PREP:
+  Two-column layout:
+
+  Left (flex: 1) — Notes area (PRIMARY):
+    - "Notes" section label + hint "- for bullets · ⌘B to bold"
+    - Large RichEditor (tall, fills available height)
+    - Placeholder: "Jot down talking points, STAR stories, questions to ask..."
+    - Supports rich text (bold, bullets)
+    - Role Context card below (if JD exists): shows jd_summary in scrollable block
+
+  Right (248px, border-left 1px --b1) — Checklist (SECONDARY):
+    - "Checklist" section label (top padding 20px 16px 10px)
+    - Add item input + "Add" button (at the top of the sidebar)
+    - Empty state: "No checklist items yet.\nAdd what matters to you." (--t3, centered)
+    - Items list (scrollable, flex: 1):
+      Each item:
+      - 16×16px checkbox (custom styled, --green when checked)
+      - Item label text (11px)
+      - On hover: subtle background + X remove button appears on right
+      - X button turns --red on its own hover
+      - Checked: green text + strikethrough + green bg tint
+      - Transition on all hover states
+    - No pre-generated items — user builds their own list
+
+  Bottom bar:
+    - Status text: "Ready to log when you are" | "X items remaining" | "✓ All complete"
+    - "Complete & Log" button (.btn-gold)
+
+STATE E — CALL PREP:
+  Two-column layout:
+
+  Left (flex: 1):
+    - Talking points RichEditor (with rich text support)
+    - Suggested questions section
+    - Company research summary (if available)
+
+  Right (~280px):
+    - "Call Notes" section label
+    - Large RichEditor for note-taking during/after the call
+    - Placeholder: "Key takeaways, next steps... (- for bullets, ⌘B to bold)"
+
+  Bottom bar:
+    - "Log Call" button (.btn-gold)
+
+STATE F — LOG VIEW (read-only):
+  Shows when a non-email interaction is selected from the log.
+  Header: channel icon + type + subject
+  Date subtext
+  Body text in styled block (--s2 bg, 1px --b1 border, padding 12–16px)
+
+CONTACTS (pinned to bottom of column 2):
+  Thin section at the bottom. Border-top 1px --b1.
+  Header: "Contacts" (9px uppercase --t3) + "+ Add" button
+
+  Contact cards (horizontal row if few, or stacked):
+    - Initials avatar (28px circle, gradient)
+    - Name (12px --t1)
+    - Role (10px --t3)
+    - "Log" button (tiny, .btn-ghost) → opens Log Interaction modal
+
+COLUMN 3 — AI INSIGHTS STRIP (172px wide, border-left 1px --b1):
+
+Header (padding 12px):
+  - "Insights" label (10px uppercase --t3)
+  - "AI" badge (tiny pill, --pd bg, --purple text)
+
+Scrollable insight cards:
+  Each card: (padding 10px, border-bottom 1px --b1)
+  - Tag label (8px uppercase, coloured):
+    ANGLE → --gold
+    TONE → --blue
+    MATCH → --green
+    HOOK → --purple
+    LEVERAGE → --teal
+    TIMING → --amber
+  - Insight text (11px, --t2, lineHeight 1.5)
+
+Quick edit buttons (below cards, padding 10px):
+  Small .btn-ghost buttons, full width, 8px radius:
+  - "→ More company-specific"
+  - "→ Stronger opening"
+  - "→ Confident close"
+  - "→ Cut it down"
+  Clicking sends the current draft through AI with the refinement appended
+
+================================================================================
+SECTION 13 — MY STORY PAGE (/story)
+================================================================================
+
+Full page (not inside the dashboard layout). Has its own top navigation.
+
+TOP NAV:
+  Left: "← Back to Applications" link (--t3, arrow icon)
+  Right: "Refresh AI" button (.btn-ghost) — regenerates AI narrative and observations
+
+HEADER SECTION (centered, padding 32–40px):
+  - Avatar circle (80px, gradient bg, large initials)
+  - Online green dot (bottom-right of avatar)
+  - Name (Instrument Serif, 24px, --t1)
+  - Headline/tagline (14px, --t2, editable on click)
+  - Skills tags row: pill-shaped tags, top 3 in --gold, rest in --s3
+
+  Profile strength bar:
+  - Label: "Profile strength — XX%" (12px --t2)
+  - Progress track (--s2 bg) + animated fill (--gold, gw animation on mount)
+  - Percentage fills left to right based on completeness
+
+AI NARRATIVE CARD (below header, max-width ~680px, centered):
+  Card: --s2 bg, 1px --b1 border, 12px radius, padding 24px
+  Large opening quote mark ( " ) in Instrument Serif, ~64px, --gold opacity 0.3
+  Editable paragraph below: italic, 15px, --t1 lineHeight 1.7
+    contenteditable, saves on blur
+    Placeholder: "Tell your story here — what drives you, what you've built,
+    what you're looking for next."
+  Footer: small hint text "Candor uses this when drafting your applications"
+    + "Edit" button (tiny .btn-ghost)
+
+TWO-COLUMN LAYOUT (below narrative card):
+  Left column (flex: 1):
+
+  CAREER TIMELINE:
+    Section header: "Career" + "+ Add" button
+    Entries sorted by year (newest first):
+
+    Each entry:
+    - Year dot (8px circle) with vertical connector line
+    - Key milestones: --gold dot + --gold year text
+    - Regular entries: --b2 dot + --t3 year text
+    - Badge: "Work" | "Education" | "Award" | "Project" | "Activity"
+      (colour-coded pills)
+    - Title (13px, --t1, semi-bold)
+    - Organisation (12px, --t2)
+    - Description (12px, --t3, lineHeight 1.5)
+
+  Right column (320px):
+
+  SKILLS:
+    "Skills" header + "+ Add" button
+    Pill tags: each skill as a rounded pill
+    "+ Add skill" inline input (appears on click of Add)
+    Click a skill to remove it (× appears on hover)
+
+  AI STRENGTHS:
+    "Strengths" header
+    Horizontal bar chart (4–6 items):
+    Each row: label (11px --t2) | track (--s2 bg, 100% width) | fill (--gold, animated on mount) | score (11px --gold)
+    Animation: bars fill from 0 to value over 0.6s on mount (staggered)
+
+  WHAT I'M LOOKING FOR:
+    "Looking for" header
+    contenteditable text block — freeform what the user wants next
+    Saves on blur
+
+AI OBSERVATIONS GRID (below two columns):
+  "AI Observations" section header
+  6 cards in a 3-column grid (2 rows):
+
+  Card types and their left-border colours:
+    Strength → --green left border (4px)
+    Gap → --amber left border
+    Tip → --blue left border
+    Pattern → --purple left border
+
+  Each card: --s2 bg, 1px --b1 border, 10px radius, padding 14px
+    - Type label + icon (8px uppercase, coloured)
+    - Title (13px, --t1)
+    - Description (11px, --t2, lineHeight 1.5)
+
+================================================================================
+SECTION 14 — MODALS
+================================================================================
+
+All modals:
+- Full screen overlay: rgba(0,0,0,0.7) + backdrop-filter blur(8px)
+- Modal panel: --s1 bg, 1px --b1 border, 12px radius
+- Entrance animation: modal-in (scale 0.96→1 + translateY 8→0 + fade)
+- Close on overlay click or Escape key
+- Footer: Cancel button (.btn-ghost) + Primary action (.btn-gold)
+
+--- ADD JOB MODAL (360–420px wide) ---
+
+1. URL IMPORT BAR (top of modal, optional):
+   Input + "Import" button. Loading spinner inside input during fetch.
+   On success: pre-fills fields below.
+   On error: "Couldn't fetch — please fill in manually." (--red, 11px)
+
+2. LOGO SELECTOR:
+   Emoji picker trigger (40px rounded square, shows current emoji)
+   Clicking opens EmojiPicker component
+
+3. COMPANY field (required, labeled "Company")
+
+4. ROLE field (required, labeled "Role / Position")
+
+5. LOCATION field (optional)
+
+6. SALARY field (optional)
+   Input turns --gold when focused (to signal this field = money)
+
+7. STATUS selector: 5 pill buttons in a horizontal row
+   Saved | Applied | Screening | Interview | Offer
+   Active: --gold border + --gold text
+   Inactive: .btn-ghost small
+
+8. GROUP selector: dropdown (ThemedSelect component)
+   Shows all user groups with emoji prefix
+   Bottom option: "+ Create new group" (--gold text)
+   When "+ Create" selected: shows inline group creation form:
+     - Group name input
+     - Emoji picker for group icon
+     - "Create" button (small, .btn-gold)
+
+Footer: [Cancel] [Add Job] — Add Job disabled until Company is filled
+
+--- ADD STAGE MODAL (360px wide) ---
+
+Title: "Add a stage" (Instrument Serif)
+
+Stage type grid (3×2 grid, each card ~100px wide):
+  Interview | Test | Task
+  Call      | Portal | Other
+
+Each card:
+  - Emoji (20px)
+  - Label (12px)
+  - --s2 bg, 1px --b1 border, 8px radius
+  - Selected: --gold border + 1px + --gold text + subtle gold bg tint
+  - Hover: --s3 bg
+
+Stage name input (below grid, full width):
+  Placeholder: "e.g. Technical Screen"
+
+Footer: [Cancel] [Add Stage]
+
+--- LOG INTERACTION MODAL (360px wide) ---
+
+Title: "Log an interaction"
+
+Channel selector (1×5 row, each ~20% width):
+  Email | Call | Message | Portal | File
+
+Each channel option: icon + label, card style (same as stage type cards)
+
+Subject field: only shown for Email and Message channels
+
+Notes/summary textarea (always shown, min 80px):
+  Placeholder: "What happened? Key notes..."
+
+"Move to stage" select (optional):
+  ThemedSelect with this job's stages + "No stage change" option
+
+Footer: [Cancel] [Log it]
+
+--- ADD GROUP MODAL (320px wide) ---
+
+Title: "Create a group"
+
+Emoji picker trigger (shows selected emoji, 40px)
+Group name input (required)
+
+Footer: [Cancel] [Create]
+
+--- GMAIL SCAN MODAL (420px wide) ---
+
+Title: "Scanning your inbox..."
+
+List of tracked companies (from user's applied/interview jobs):
+Each row during scan: spinner icon | company name | "Checking..."
+After scan completes:
+  - If reply detected: amber dot | company | "Reply detected"
+  - If no reply: grey dot | company | "No reply"
+
+After all rows resolve, shows "Suggested updates" section:
+  List of jobs with proposed status changes
+  e.g. "Atlassian → Applied (reply detected)"
+  Each with a toggle (default on)
+
+"Apply updates" button (.btn-gold):
+  Applies status changes, shows toast "Updated X applications", closes modal
+
+================================================================================
+SECTION 15 — COMMUNICATION MENU
+================================================================================
+
+Opened from the communication button in the Detail View header.
+Dropdown/popover below the button.
+4 options (Cover Letter, Email, Interview Prep, Call Prep).
+Each option: emoji + label + description subtext.
+Clicking switches to Activity tab with that communication type selected.
+
+================================================================================
+SECTION 16 — EMOJI PICKER COMPONENT
+================================================================================
+
+Portal-rendered dropdown positioned below (or above if near bottom of viewport).
+Width: ~280px. --s1 bg, 1px --b1 border, 10px radius.
+Entrance: dropdown-in animation.
+
+4 category tabs at top:
+  Industry | Work | Status | People
+
+Tab indicators: underline + --gold text for active tab.
+
+Emoji grid: 4 rows of 8 emojis (32 total per category).
+Each emoji: 32px × 32px hover target, centered emoji, 6px radius.
+Hover: --s3 bg.
+Selected: --glow bg + 1px --b1 border.
+
+Category suggestions (broad, not prescriptive):
+
+  INDUSTRY (companies, sectors):
+  🏢 🏭 🏥 🏦 🏬 🏪 🏫 🏗️
+  💻 🖥️ 📱 🎮 🎬 🎵 📺 📡
+  ✈️ 🚗 🚢 🏗️ ⚡ 🌿 💊 🔬
+  🎨 ✏️ 📐 🖋️ 📸 🎥 🎭 🛍️
+
+  WORK (roles, documents, tools):
+  💼 📋 📊 📈 📉 📂 📁 🗂️
+  ✉️ 📧 📞 📠 🖨️ 💾 🖱️ ⌨️
+  🔧 🔨 ⚙️ 🛠️ 🔩 💡 🔍 🔎
+  📝 📌 📍 🗓️ 📅 ⏰ ⏳ 🏆
+
+  STATUS (emotions, progress):
+  ✅ ❌ ⭐ 🌟 💫 ⚡ 🔥 💥
+  🎯 🎲 🎰 🎪 🎡 🎢 🎠 🎭
+  💪 👊 🤝 👍 👎 ✊ 🙌 👏
+  🚀 🌈 ☀️ 🌙 ❄️ 🌊 🌸 🌺
+
+  PEOPLE (teams, roles):
+  👤 👥 👨‍💻 👩‍💻 👨‍💼 👩‍💼 👨‍🎨 👩‍🎨
+  👨‍🔬 👩‍🔬 👨‍🏫 👩‍🏫 👨‍⚕️ 👩‍⚕️ 👨‍🍳 👩‍🍳
+  🧑‍🚀 👨‍✈️ 👩‍✈️ 🧑‍🎤 👨‍🎤 👩‍🎤 🧑‍🔧 🧑‍💼
+  🤖 👾 🎅 🧙 🧝 🧚 🦸 🦹
+
+================================================================================
+SECTION 17 — RICH TEXT EDITOR (contenteditable)
+================================================================================
+
+Used everywhere notes are taken:
+  - Overview Tab: "Why this role" + Notes section
+  - Interview Prep: notes area
+  - Call Prep: notes area
+
+Keyboard shortcuts:
+  - Cmd+B (Mac) / Ctrl+B (Windows): toggle bold on selected text
+  - "- " (dash then space) at start of a line: converts to bullet "•"
+  - Shift+Enter: new line within the editor
+  - Enter (when onEnterSave is set): triggers save action
+
+Visual: no border on its own (the parent container provides border).
+Bold text renders as actual bold (not markdown asterisks).
+Bullets render as "• " character.
+
+CSS support:
+  [contenteditable][data-placeholder]:empty::before
+    content: attr(data-placeholder)
+    color: var(--t3)
+
+================================================================================
+SECTION 18 — TOAST NOTIFICATIONS
+================================================================================
+
+Bottom-right of screen. Slides in from right.
+One toast visible at a time (queue if multiple).
+Auto-dismisses after 2.7 seconds.
+
+Style:
+  --s2 bg, 1px --b2 border, 8px radius, padding 10px 14px.
+  ⚡ icon (--gold) + message text (12px --t1).
+  Shadow: 0 4px 24px rgba(0,0,0,0.3).
+
+Examples of toast messages used in the app:
+  "Note saved"
+  "Note updated"
+  "Note deleted"
+  "Interview prep logged"
+  "Job added"
+  "Status updated"
+  "Gmail connected ✓"
+  "Updated X applications"
+
+================================================================================
+SECTION 19 — DATA MODEL
+================================================================================
+
+GROUPS:
+  id, user_id, name, emoji, position, created_at
+  Virtual "__ungrouped" group for jobs with no group assignment.
+
+JOBS:
+  id, user_id, group_id (nullable)
+  company (required), role (required)
+  location (nullable), salary (nullable)
+  logo (emoji string, default '🏢')
+  status: 'saved' | 'applied' | 'screening' | 'interview' | 'round1' | 'round2' | 'offer' | 'rejected'
+  why (nullable — the "why this role" field)
+  applied_at (date, nullable — set when status is 'applied')
+  saved_tone: 'professional' | 'warm' | 'bold' | 'assertive' | 'enthusiastic' | 'grateful'
+  fit (integer 0–100, from JD analysis)
+  active_stage_id (nullable, references stages)
+  notes (text[] — array of HTML strings)
+  jd_summary (nullable — extracted from JD analysis)
+  created_at, updated_at
+
+STAGES (custom pipeline per job):
+  id, job_id, name
+  type: 'default' | 'interview' | 'test' | 'task' | 'call' | 'portal' | 'other'
+  position (order in pipeline)
+
+INTERACTIONS (unified activity log):
+  id, job_id
+  channel: 'email' | 'call' | 'message' | 'portal' | 'file'
+  subject (nullable)
+  body (nullable)
+  interacted_at (timestamp)
+  stage_id (nullable — which stage this interaction relates to)
+
+CONTACTS:
+  id, job_id, name, role (nullable), initials (nullable)
+
+================================================================================
+SECTION 20 — AI FEATURES
+================================================================================
+
+AI FEATURES SUMMARY:
+
+1. EMAIL / COVER LETTER GENERATION (streaming):
+   Route: POST /api/ai/generate-email
+   Input: company, role, status/stage, tone, why, user narrative
+   Output: streaming text displayed with typewriter animation
+   System prompt rules: under 200 words, no clichés, first person,
+   clear next step, leave personalisation placeholders
+
+2. JD ANALYSIS (non-streaming):
+   Route: POST /api/ai/analyse-jd
+   Input: job description text, company, role, user skills
+   Output: { fitScore: 0–100, matched: string[], gaps: string[], angle: string }
+   Result stored on job.fit and shown in Overview tab
+
+3. URL JOB IMPORT (non-streaming):
+   Route: POST /api/import-url
+   Input: { url: string }
+   Output: { company, role, location, salary } — all nullable
+   Pre-fills Add Job modal
+   LinkedIn blocks server-side fetch — graceful fallback to manual entry
+
+4. MY STORY AI REFRESH:
+   Route: POST /api/ai/refresh-story (or similar)
+   Input: user's timeline entries, skills, current narrative
+   Output: updated narrative paragraph + 6 observation cards
+   Regenerates on "Refresh AI" button click in My Story page
+
+5. AI INSIGHTS STRIP:
+   Contextual insights shown in Activity tab right column
+   6 insight cards generated based on company + role + user profile
+   Types: ANGLE, TONE, MATCH, HOOK, LEVERAGE, TIMING
+   Quick edit buttons trigger refinement prompts
+
+PERSONALISATION SCORE (client-side, no AI):
+  Calculated on email body text:
+  - "Low": company name not mentioned in body → red badge
+  - "Good": company name mentioned → amber badge
+  - "Strong": company mentioned AND body > 280 chars → green badge
+  Always shown below the email drafter body area
+
+================================================================================
+SECTION 21 — USER FLOWS
+================================================================================
+
+FLOW 1: Adding a new job
+
+1. User clicks "Add Job" in nav OR pastes URL into import bar
+2. If URL: loading spinner while /api/import-url fetches and extracts
+3. Add Job Modal opens (pre-filled or blank)
+4. User fills: company (required), role, location, salary, status, group, logo
+5. User selects or creates a group
+6. User clicks "Add Job"
+7. Modal closes, new job is selected, Detail View slides in
+8. Overview tab shown by default
+9. "Why this role" field is prominently empty — user prompted to fill it
+
+FLOW 2: Drafting an application email
+
+1. User opens a job in Detail View
+2. Clicks the Communication button (or uses quadrant buttons in Activity tab)
+3. Selects "Email Draft" or "Cover Letter"
+4. Activity tab activates, Email Drafter shown
+5. User selects tone (Professional default)
+6. Clicks "Generate" → AI generates with typewriter animation
+7. User edits the generated text directly
+8. Personalisation score updates in real time
+9. User clicks "Send & Log" → interaction is logged, email copied to clipboard
+
+FLOW 3: Tracking an interview
+
+1. Job moves to Interview status (via status dropdown or stage click)
+2. Overview shows Next Action Card: "Interview stage — review notes and prep"
+3. User clicks "View activity" → Activity tab
+4. User selects "Interview Prep" from Communication menu or quadrant
+5. Adds checklist items they care about (empty by default)
+6. Types notes in the large left panel (with rich text support)
+7. Clicks "Complete & Log" → interaction saved as 'interview-prep'
+
+FLOW 4: Using My Story for better emails
+
+1. User navigates to My Story (avatar menu → My Story)
+2. Edits the AI narrative: describes background, strengths, career goals
+3. Adds career timeline entries
+4. Adds skills
+5. Clicks "Refresh AI" → AI generates new narrative and 6 observations
+6. Returns to dashboard — all future email generations now use this narrative
+
+FLOW 5: Analysing a job description
+
+1. User opens a job in Detail View
+2. Scrolls to JD Analysis in Overview tab
+3. Clicks "Add JD →" (empty state)
+4. Pastes the full job description
+5. Clicks "Analyse against my profile"
+6. Loading state (spinner)
+7. Result: fit score ring, matched/gap keywords, suggested angle
+8. Fit score is saved to job record (shown in table and info grid)
+
+FLOW 6: Logging a phone call
+
+1. User clicks "Log" button in Detail View header
+2. Log Interaction Modal opens
+3. Selects "Call" channel
+4. Fills notes/summary
+5. Optionally moves to a new stage
+6. Clicks "Log it"
+7. Interaction appears in timeline (left column of Activity tab)
+
+FLOW 7: Gmail simulation
+
+1. User clicks "Connect Gmail" in nav
+2. Button turns green → "Scan inbox" — toast shows "Gmail connected ✓"
+3. User clicks "Scan inbox"
+4. Gmail Scan Modal opens
+5. Each tracked company shows a row with a spinner
+6. After 2–3 seconds each row resolves: "Reply detected" or "No reply"
+7. Suggested status updates shown
+8. User toggles which updates to apply
+9. Clicks "Apply updates"
+10. Jobs update, modal closes, toast: "Updated X applications"
+
+================================================================================
+SECTION 22 — GROUPS FEATURE
+================================================================================
+
+Groups allow users to organise jobs into named categories.
+Examples: "Tech Companies", "Startups", "Dream Jobs", "Backup Options"
+
+Each group has:
+- A name (e.g., "Tech")
+- An emoji icon (e.g., 💻)
+- A position/order
+
+Groups appear:
+1. In the Table View: jobs grouped under collapsible group headers
+2. In the Add Job modal: as a dropdown for assigning a job
+3. In the Detail View breadcrumb: "· GroupEmoji GroupName"
+4. In the TopNav: "Groups" button with count badge
+5. In the Sheet/Table page: user can create groups directly from the table toolbar
+
+Ungrouped jobs are shown in a virtual "No Group" section at the bottom.
+
+Creating a group:
+- From Add Job modal: "+ Create new group" option in group dropdown
+- From TopNav "Groups" button: shows manage groups panel
+- From Table toolbar: "+ Create group" button
+
+Managing groups (Groups panel):
+- List of all groups with emoji + name
+- Edit name / change emoji for each group
+- Delete group (jobs in group become ungrouped, not deleted)
+- Drag to reorder
+
+================================================================================
+SECTION 23 — PLANNED FEATURES (NOT YET BUILT)
+================================================================================
+
+These are planned features for future development.
+Include them as skeleton states or "Coming soon" where relevant in UI.
+
+1. BROWSER EXTENSION — "Save to Candor"
+   Highest priority future feature.
+   Behaviour: User browses a job listing on LinkedIn, Seek, Greenhouse, etc.
+   Clicks Candor extension icon → popup shows extracted job details
+   User selects group, edits "why", clicks "Save to Candor"
+   Same design language as the in-app Add Job modal.
+   Tech: Chrome Manifest V3, mini React app, calls /api/import-url
+
+2. REAL GMAIL OAUTH
+   Replace the simulated Gmail scan with real OAuth.
+   Scans inbox for replies to tracked companies.
+   Suggests status updates based on detected emails.
+
+3. SETTINGS PAGE
+   Currently a placeholder in the avatar dropdown.
+   Future: email notification preferences, AI tone preferences,
+   default group, resume upload, subscription management.
+
+4. MOBILE VIEW
+   Currently desktop-first. Future: responsive layout for mobile.
+   Table view collapses to cards. Detail view full-screen.
+
+5. ADVANCED ANALYTICS
+   Candor Pro feature.
+   Charts: applications over time, response rate by source,
+   time-to-response by company, stage conversion rates.
+
+6. RESUME UPLOAD + PARSING
+   Route: POST /api/ai/parse-resume
+   Upload PDF resume → AI extracts timeline, skills, narrative
+   Pre-fills My Story page
+
+7. TEAM / SHARED TRACKING (long-term)
+   Share a job pipeline with a career coach or mentor.
+   Read-only view with comment ability.
+
+================================================================================
+SECTION 24 — MONETISATION
+================================================================================
+
+FREE TIER:
+- Unlimited job tracking
+- Unlimited interactions, notes, stages
+- Custom stage pipelines
+- 10 AI email generations per month
+- My Story profile (full)
+- JD Analysis: 5 per month
+
+CANDOR PRO ($19/month or $99/year):
+- Unlimited AI email generations
+- Gmail inbox scanning + auto status updates
+- Unlimited JD analysis
+- AI insights panel (Activity tab right column)
+- Advanced analytics dashboard
+- Priority support
+
+RULE: Never lock content a user created on free tier.
+If limit hit → show upgrade prompt, don't break or hide existing content.
+
+================================================================================
+SECTION 25 — ANIMATION & INTERACTION REFERENCE
+================================================================================
+
+LIST OF ALL INTERACTIVE HOVER/ACTIVE STATES:
+
+Table rows: background lifts to --s1 on hover
+Filter pills: border brightens, text lightens on hover
+Status badges: subtle scale on hover in dropdowns
+Stage nodes: background tints on hover
+Quadrant buttons (Cover Letter / Email / Interview Prep / Call Prep):
+  background --s3, border --b2, translateY(-1px) on hover
+  ALL FOUR must have this hover animation — this was previously broken
+Sort column headers: show ↑↓ arrows on hover
+Emoji picker items: --s3 bg on hover
+Delete buttons: --red colour + --rdd bg on hover
+Save buttons (active): --gold2 on hover + translateY(-1px)
+Save buttons (disabled): no hover effect, default cursor
+Note action icons: scale(1.1) on hover
+Checklist items: background tint + remove button appears on hover
+Checklist remove button: --red on its own hover
+Interaction log entries: --s2 bg on hover
+
+TRANSITION DEFAULTS:
+  All property transitions: 0.12s–0.15s ease (NOT ease-in-out)
+  Color changes: 0.12s
+  Background changes: 0.15s
+  Transform (translateY): 0.12s
+  Opacity reveals: 0.15s
+  Border color: 0.15s
+  Scale: 0.12s
+
+FOCUS STATES:
+  All inputs: border-color → --b3 (no box-shadow ring)
+  No blue outline — override browser defaults
+
+================================================================================
+SECTION 26 — COPY & VOICE
+================================================================================
+
+The product voice is calm, direct, and editorial. Not bubbly or over-excited.
+No exclamation marks in UI copy unless in toast confirmations.
+Use sentence case for labels (not Title Case everywhere).
+Italic serif for supportive/contextual copy.
+
+Key copy examples:
+
+  Button: "Draft now" not "Start Drafting!"
+  Placeholder: "Add why this role matters to you..." (lowercase start)
+  Empty state: "No applications yet — paste a URL above or click Add Job."
+  Nudge: "Always edit before sending — your voice matters more than the AI's."
+  Next action: "X days since you applied — time to send a follow-up."
+  Checklist empty: "No checklist items yet.\nAdd what matters to you."
+  Loading: "Signing you in..." (with trailing ellipsis, no exclamation)
+  Gmail: "Gmail connected ✓" (checkmark, not exclamation)
+  Delete confirm: "Delete this note?" (question, not warning)
+
+Section labels are ALL CAPS, 9px, letter-spacing 0.1em:
+  "NOTES" "NEXT ACTION" "WHY THIS ROLE" "STATUS" "INSIGHTS"
+
+================================================================================
+SECTION 27 — ACCESSIBILITY & TECHNICAL NOTES
+================================================================================
+
+- All custom inputs/buttons have title attributes for icon-only elements
+- Emoji in UI is decorative; meaningful text is always present alongside
+- Color alone never carries meaning — always paired with text labels
+- Focus trap in modals (Tab cycles within the modal)
+- Escape key closes all modals and dropdowns
+- Click-outside closes all dropdowns and pickers
+
+TECHNICAL STACK (for reference):
+  Framework: Next.js 14 App Router (TypeScript)
+  Auth + DB: Supabase (PostgreSQL + Row Level Security)
+  State: Zustand global store
+  Fonts: Instrument Serif + DM Sans (Google Fonts)
+  AI: Anthropic Claude via streaming API (or Ollama locally)
+  Hosting: Vercel
+
+================================================================================
+END OF CANDOR CONTEXT DOCUMENT
+================================================================================
+Total features documented: 25+ sections
+All screens: Login, Signup, Dashboard (Table + Detail), My Story
+All components: TopNav, TableView, DetailView, OverviewTab, ActivityTab,
+  and all sub-components, modals, and UI primitives
+All user flows: 7 primary flows documented
+All design tokens: complete CSS variable reference
+All interactions: hover states, animations, transitions
+All planned features: browser extension, real Gmail, analytics, mobile
+================================================================================

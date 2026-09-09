@@ -1,0 +1,510 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-serif: 'Plus Jakarta Sans', sans-serif;
+  --font-sans: 'DM Sans', sans-serif;
+}
+
+:root {
+  /* Surfaces */
+  --bg:  #EEF0F5;
+  --s1:  #FFFFFF;
+  --s2:  #F5F7FA;
+  --s3:  #EAECF2;
+  --s4:  #E2E5EE;
+
+  /* Text */
+  --t1:  #1A2B3C;
+  --t2:  #4E5D6C;
+  --t3:  #8A96A8;
+
+  /* Primary accent — purple (replaces --gold so all existing var(--gold) refs pick it up) */
+  --gold:  #5E5CE6;
+  --gold2: #7B79F7;
+  --gold3: #EDEDFF;
+
+  /* Status colours */
+  --green:  #27AE60;
+  --gd:     rgba(39,174,96,0.10);
+  --blue:   #3B82F6;
+  --bd:     rgba(59,130,246,0.10);
+  --amber:  #E67E22;
+  --ad:     rgba(230,126,34,0.10);
+  --purple: #9B59B6;
+  --pd:     rgba(155,89,182,0.10);
+  --red:    #E74C3C;
+  --rdd:    rgba(231,76,60,0.10);
+  --teal:   #00B894;
+  --td:     rgba(0,184,148,0.10);
+
+  /* Borders (dark on light bg) */
+  --b1:  rgba(26,43,60,0.08);
+  --b2:  rgba(26,43,60,0.13);
+  --b3:  rgba(26,43,60,0.22);
+
+  /* Glows */
+  --glow:  rgba(94,92,230,0.12);
+  --glow2: rgba(94,92,230,0.06);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--t1);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+button, input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+select {
+  color-scheme: light;
+}
+
+button {
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--b3);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--t3);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slidein {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes slidedown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes gw {
+  from { width: 0; }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(94,92,230,0.35); }
+  50%       { box-shadow: 0 0 0 5px rgba(94,92,230,0); }
+}
+@keyframes breathe {
+  0%, 100% { opacity: .5; }
+  50%       { opacity: 1; }
+}
+@keyframes import-pulse {
+  0%, 100% { border-color: rgba(94,92,230,0.40); box-shadow: 0 0 0 0 rgba(94,92,230,0.10); }
+  50%       { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(94,92,230,0.08); }
+}
+@keyframes dropdown-in {
+  from { opacity: 0; transform: scale(0.95) translateY(-4px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-up      { animation: up 0.35s ease both; }
+.animate-slidein { animation: slidein 0.3s ease both; }
+.animate-spin    { animation: spin 0.8s linear infinite; }
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px var(--s2) inset !important;
+  -webkit-text-fill-color: var(--t1) !important;
+  caret-color: var(--t1);
+}
+
+/* ── Modal ─────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,43,60,0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade 0.15s ease both;
+}
+.modal-content {
+  background: var(--s1);
+  border: 1px solid var(--b2);
+  border-radius: 16px;
+  padding: 28px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(26,43,60,0.14), 0 2px 8px rgba(26,43,60,0.06);
+  animation: modal-in 0.2s ease both;
+}
+
+/* ── Buttons ────────────────────────────────────────── */
+/* Primary — purple */
+.btn-gold {
+  padding: 8px 16px;
+  background: var(--gold);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-gold:hover {
+  background: var(--gold2);
+  box-shadow: 0 2px 14px rgba(94,92,230,0.30);
+  transform: translateY(-1px);
+}
+.btn-gold:active {
+  transform: scale(0.97) translateY(0);
+}
+.btn-gold:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Navy — dark inverted button */
+.btn-navy {
+  padding: 8px 16px;
+  background: #1A2B3C;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-navy:hover {
+  background: #243548;
+  box-shadow: 0 2px 12px rgba(26,43,60,0.20);
+  transform: translateY(-1px);
+}
+.btn-navy:active {
+  transform: scale(0.97) translateY(0);
+}
+.btn-navy:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Ghost — outlined */
+.btn-ghost {
+  padding: 8px 14px;
+  background: transparent;
+  color: var(--t2);
+  font-weight: 500;
+  font-size: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--b2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-ghost:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold3);
+}
+.btn-ghost:active {
+  transform: scale(0.97);
+}
+
+/* Icon button */
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--t3);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.btn-icon:hover {
+  background: var(--s3);
+  color: var(--t1);
+}
+
+/* ── Form inputs ────────────────────────────────────── */
+.input-field {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--s2);
+  border: 1px solid var(--b2);
+  border-radius: 8px;
+  color: var(--t1);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.input-field::placeholder {
+  color: var(--t3);
+}
+.input-field:focus {
+  border-color: var(--gold);
+  background: var(--s1);
+  box-shadow: 0 0 0 3px rgba(94,92,230,0.10);
+}
+
+/* ── Interactive cards ──────────────────────────────── */
+.card-interactive {
+  background: var(--s1);
+  border: 1px solid var(--b1);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-shadow: 0 1px 4px rgba(26,43,60,0.05);
+}
+.card-interactive:hover {
+  border-color: var(--b3);
+  box-shadow: 0 4px 16px rgba(26,43,60,0.10);
+  transform: translateY(-1px);
+}
+.card-interactive:active {
+  transform: scale(0.98) translateY(0);
+}
+
+/* ── Pills ──────────────────────────────────────────── */
+.pill {
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+  border: 1px solid var(--b2);
+  background: var(--s2);
+  color: var(--t2);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.pill:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold3);
+}
+.pill.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: var(--gold3);
+  font-weight: 600;
+}
+
+/* ── Table rows ─────────────────────────────────────── */
+.table-row {
+  border-bottom: 1px solid var(--b1);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.table-row:hover {
+  background: var(--s2);
+}
+.table-row:active {
+  background: var(--s3);
+}
+
+/* ── Section labels ─────────────────────────────────── */
+.section-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--t3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--b1);
+}
+
+/* ── Dropdown menus ─────────────────────────────────── */
+.dropdown-menu {
+  background: var(--s1);
+  border: 1px solid var(--b2);
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: 0 8px 32px rgba(26,43,60,0.12), 0 2px 8px rgba(26,43,60,0.06);
+  animation: dropdown-in 0.18s ease both;
+}
+
+/* ── Rich editor ────────────────────────────────────── */
+[contenteditable][data-placeholder]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--t3);
+  pointer-events: none;
+  font-style: normal;
+}
+
+[contenteditable] b,
+[contenteditable] strong,
+.rich-content b,
+.rich-content strong {
+  font-weight: 700;
+  color: var(--t1);
+}
+
+/* ── Notion-style bullet lists in rich editors + saved notes ── */
+[contenteditable] ul,
+.rich-content ul {
+  padding-left: 20px;
+  margin: 3px 0;
+  list-style-type: disc;
+}
+[contenteditable] ul li,
+.rich-content ul li {
+  margin: 2px 0;
+  line-height: 1.6;
+  padding-left: 2px;
+}
+[contenteditable] ul li::marker,
+.rich-content ul li::marker {
+  color: var(--gold);
+}
+[contenteditable] ul ul,
+.rich-content ul ul {
+  list-style-type: circle;
+  padding-left: 18px;
+}
+[contenteditable] ul ul ul,
+.rich-content ul ul ul {
+  list-style-type: square;
+}
+
+/* ── Dropdown items ─────────────────────────────────── */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--t2);
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: all 0.1s ease;
+}
+.dropdown-item:hover {
+  background: var(--s2);
+  color: var(--t1);
+}
+.dropdown-item:active {
+  background: var(--s3);
+  transform: scale(0.98);
+}
+
+/* ── Mobile responsiveness ─────────────────────────── */
+@media (max-width: 768px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0;
+    max-height: 85vh;
+    padding: 20px 16px 28px;
+    animation: modal-slide-up 0.25s ease both;
+  }
+  .dropdown-menu {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    border-radius: 16px 16px 0 0;
+    padding: 8px;
+    max-height: 60vh;
+    overflow-y: auto;
+    animation: modal-slide-up 0.2s ease both;
+  }
+  .dropdown-item {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 16px 12px 24px;
+  }
+  .btn-gold, .btn-ghost, .btn-navy {
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+  .input-field {
+    font-size: 16px; /* prevents iOS zoom on focus */
+    padding: 10px 12px;
+  }
+}
+
+@keyframes modal-slide-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}

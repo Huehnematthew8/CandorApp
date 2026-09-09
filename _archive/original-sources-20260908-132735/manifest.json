@@ -1,0 +1,802 @@
+[
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/postcss.config.mjs",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/postcss.config.mjs",
+    "sha256": "dfac7ac2d86d326a0e5adb024e7943c181393ed17a5fcb8f0315b24c7da6ddde"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/CANDOR_PRD.md",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/CANDOR_PRD.md",
+    "sha256": "0be6e7a2ec596e4c7ccfed328b13c3bd27aa5e512cf265ea74a36be5830d6eda"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/next-env.d.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/next-env.d.ts",
+    "sha256": "7ad303e40d4fddf44f156129e397511953a71481c5cfd86b1862649aaaf240cc"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/README.md",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/README.md",
+    "sha256": "60b55ff7df79af72590f9524208e46642bc32bdc175cdad41349681c0e2f958f"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/.gitignore",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/.gitignore",
+    "sha256": "b2a72e65f5cc5586d59a2056172a438c227cdcdfb2aac8a564798fa9f796b7c3"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/package-lock.json",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/package-lock.json",
+    "sha256": "1faf62571085ac9b31994d4d9824c44c5574196157866dba77f7ced376c087d2"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/package.json",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/package.json",
+    "sha256": "d945dd821eef61e65610e5265f44845e54d640a206e0e426b87ed911043e2ce2"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/CANDOR_STITCH_CONTEXT.txt",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/CANDOR_STITCH_CONTEXT.txt",
+    "sha256": "82ac4a9ce999e747792bae0c07f47b5085212e803c4ec23def6b5816c6f09e9b"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/supabase_profiles_migration.sql",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/supabase_profiles_migration.sql",
+    "sha256": "2b64ecbec32761c787556c5095652d121d0307c0d3eb49b2268f7a9d4d3c9421"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/tsconfig.json",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/tsconfig.json",
+    "sha256": "5c51df4c59f4510d8c7dadf07a5c32132228826a3b331da5e286207b4df7ef9c"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/AGENTS.md",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/AGENTS.md",
+    "sha256": "e3447d84251880fb34cfae09131cb4c57471529bbfe60976a3245793cf621627"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/eslint.config.mjs",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/eslint.config.mjs",
+    "sha256": "870f1adccecf3051cbcd9fd307cef51d7633cf510979c181a81f4b1797273493"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/CLAUDE.md",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/CLAUDE.md",
+    "sha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/supabase_contacts_email_phone_migration.sql",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/supabase_contacts_email_phone_migration.sql",
+    "sha256": "315cd907a1c5b83a30b7da332bcca1d36e1ac14a71515b27a75df917b5d9375b"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/next.config.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/next.config.ts",
+    "sha256": "91f40db73abada98801bc82fb55a9afe18c5fb9743a78e61526f44f3fd2d7023"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/public/file.svg",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/public/file.svg",
+    "sha256": "2b67812c325c199a02536cdbeea0c593a72f707d323b72ee3e08dbab06753bd4"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/public/vercel.svg",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/public/vercel.svg",
+    "sha256": "f081337b2fee635b455b63275406a3e7f39d6a014e25ad90dab5a67e62a12ac4"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/public/next.svg",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/public/next.svg",
+    "sha256": "55995dfad6ecb4945a1e856ddca03c5e16aa5bf13fd21b4df6a74ae79357bcfc"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/public/mascot.png",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/public/mascot.png",
+    "sha256": "2227d8315a8f829946e90bb99530bed3f9163af40fcd8fd0b14870f43dcc4b39"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/public/globe.svg",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/public/globe.svg",
+    "sha256": "b614b9bf183925957661ac851498fe1d8029fd43a62fbfed86f9e2624a57e7cf"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/public/window.svg",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/public/window.svg",
+    "sha256": "644768c4aaeb4767bce293344eeb0c125fb804a94d801440424072202d85e3a1"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/proxy.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/proxy.ts",
+    "sha256": "9b9dc2e4d40d345986f090cca4f81d3dda72776074bf8d254a4504ab745cb711"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/types/index.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/types/index.ts",
+    "sha256": "79adbe41d3e27aab66a0a79de6e6b2bf4864524496b02604e31710821078e8c8"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/favicon.ico",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/favicon.ico",
+    "sha256": "2b8ad2d33455a8f736fc3a8ebf8f0bdea8848ad4c0db48a2833bd0f9cd775932"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/layout.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/layout.tsx",
+    "sha256": "8ad274ee17bbb4490b0099b4e44cc277efeff97c3b6980ea44dad4094176845f"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/page.tsx",
+    "sha256": "d7628e7065c575b5ac5b38a9936ff4bdbb4225d25ae9113529a8c2a7d6f7de8e"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/globals.css",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/globals.css",
+    "sha256": "584794f8e8d329ec9e9881af2c725deccd11d3708ae9520c97e58bd316053cbf"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/settings/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/settings/page.tsx",
+    "sha256": "7f6935885c9efcd6717d3043cc52f68597967796609b69040c1f08cf2772cb7d"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/auth/callback/route.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/auth/callback/route.ts",
+    "sha256": "ba97b872859e5fcd818e7b95fcbd80bb7e502aff8a3795a4fc8c1e5a929fb522"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/signup/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/signup/page.tsx",
+    "sha256": "7646938c863d9d2725906456a4b9e343eadf5046e29fd3808ff729a1512375d0"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/dashboard/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/dashboard/page.tsx",
+    "sha256": "ec56f1b8b30681a254cf1be7f32479b62a2315caf8f48a3dd0f2f24b7d7b69e3"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/api/ai/generate-email/route.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/api/ai/generate-email/route.ts",
+    "sha256": "a9812e1c68b29e96bfeeba93b0c69f265191dc04dad9fe244c30f267a50cfb26"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/api/ai/analyse-jd/route.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/api/ai/analyse-jd/route.ts",
+    "sha256": "8078604dbcbc488e9023093bfcc080a1c61b1b1faac42c63f20a27964469be10"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/api/ai/parse-resume/route.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/api/ai/parse-resume/route.ts",
+    "sha256": "a75c1a2baa6bf0447e0ef3253ba07aff258671d9d337001a1e8d6f926db8c6c7"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/api/import-url/route.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/api/import-url/route.ts",
+    "sha256": "3c9de16b6847e7830550db70d6f0f48fd30ecc0b9493fad703d370793a3aa10d"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/login/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/login/page.tsx",
+    "sha256": "f62a851c8df65698a75c8321eabdbb0890da70d6f46cc2240a1d6a12dfca3be8"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/app/story/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/app/story/page.tsx",
+    "sha256": "1aa783d4d154eb8a37968741d82467bb75ddfa2a1e0bd0d6fbd7154d8e999b71"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/ui/StageTrack.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/ui/StageTrack.tsx",
+    "sha256": "3358ae229978ff428cde14f1e3c458547e2afd8f4c7c6d4332dae65e6712fc0f"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/ui/WombatMascot.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/ui/WombatMascot.tsx",
+    "sha256": "65d9aa2b7ae55f99201a47c45a193eb19bed782816d5cd5dd9267e8918f4ad9c"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/ui/ParticleCanvas.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/ui/ParticleCanvas.tsx",
+    "sha256": "d2714fdb1052d9d6de9374b051243cc164eb24f7f3368f27561af9d20e5ff2a3"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/ui/EmojiPicker.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/ui/EmojiPicker.tsx",
+    "sha256": "45aaff922c98344ab7ecb67abb81cfa6b8ac3fe4136bba9a765d9215fa140fd4"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/ui/RichEditor.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/ui/RichEditor.tsx",
+    "sha256": "dce29ecfe359cf1c7169e06321c10965d530d6c51d35f2364f083cf9a4b1b95e"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/ui/StatusBadge.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/ui/StatusBadge.tsx",
+    "sha256": "7352e7f0368155080ece11226abd0c7ea276b1754bf4b03fbd435d2b006ee4be"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/ui/Toast.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/ui/Toast.tsx",
+    "sha256": "5ed235db25e29cb71ddb1d8ee335dc0a14813ac12f21d327c48f8b1ea1e629b7"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/ui/ThemedSelect.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/ui/ThemedSelect.tsx",
+    "sha256": "b8444d0d60952f77d3b2012db0ab86397d868d9dd2770b29b69b61fa000365d8"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/DetailView.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/DetailView.tsx",
+    "sha256": "2fe86b25a1beaec20b9edbb5c67b785c3833672cb78d982c2a6f1811d0fbb8ee"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/TableView.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/TableView.tsx",
+    "sha256": "991131a91c3d61030615201673af6d3e4588fdb6ebc4a6a1092fa602090edc8a"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/TopNav.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/TopNav.tsx",
+    "sha256": "0d0b74b27d2f068223c9985659d37298040d6c14ef8828a54a43f20d4c5a67a4"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/activity/ContactsSection.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/activity/ContactsSection.tsx",
+    "sha256": "bf0f048900592c4d877273d1caf97e186f93fdb58d3d266febb295b1a1a69e97"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/activity/ActivityTab.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/activity/ActivityTab.tsx",
+    "sha256": "03cf1df1010dfaedc3b17704655aef429660d7474a10212519afbc557a8f5cc0"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/activity/EmailDrafter.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/activity/EmailDrafter.tsx",
+    "sha256": "83e932a34a435a4cfc02be1d4eb49f7de2696c5763d6df51b821e67c9811ee2e"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/activity/InteractionLog.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/activity/InteractionLog.tsx",
+    "sha256": "58b1758f81f91b2b197931c2ef6b621a616cf29785b458b14051e258b209a698"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/activity/CommunicationMenu.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/activity/CommunicationMenu.tsx",
+    "sha256": "3a8784f88b3aa72863f9f3b18ffecc6b0184d957440479e9103af7f35f39fb23"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/activity/LogView.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/activity/LogView.tsx",
+    "sha256": "9bce134949a710a4f314fc702dfc34001bd9a4490021f747150add941e525321"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/activity/CoverLetterDrafter.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/activity/CoverLetterDrafter.tsx",
+    "sha256": "c30cf8f9f65db2ed309aac06db06597a00d265a08c357814ab46623f048c57e8"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/activity/InterviewPrep.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/activity/InterviewPrep.tsx",
+    "sha256": "01c95339bafd24ed97efa9703b90e475d612f3c4296dfa41e2d08e90f0244d9b"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/activity/AIInsightsStrip.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/activity/AIInsightsStrip.tsx",
+    "sha256": "d885b587e2baa2deac6691cfe7a6bfefd4f6e83a28c6b57c9009ce403757c5a2"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/activity/CallPrep.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/activity/CallPrep.tsx",
+    "sha256": "651d282fd99a113738d3a3e6967d3c90f14ab5c20836e3d4b98fae41f236dbdb"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/modals/AddStageModal.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/modals/AddStageModal.tsx",
+    "sha256": "fcc511f73c939434e17e6adad57f7f45bb856d46ccdd1157060088d078ca2ec1"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/modals/BulkImportModal.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/modals/BulkImportModal.tsx",
+    "sha256": "105478f60865cf0e6944ddb7098ed9c5fb18f077b0b3b3e9e0bbf07f538b2532"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/modals/AddJobModal.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/modals/AddJobModal.tsx",
+    "sha256": "77def3a88d393ec463f3cb5ba59e113c65b5b603b163717649586c9447987765"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/modals/AddGroupModal.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/modals/AddGroupModal.tsx",
+    "sha256": "14b7fc91957c4c6ea94f5337c61e407739134c7f4e446adffc0ca2da31295297"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/modals/LogInteractionModal.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/modals/LogInteractionModal.tsx",
+    "sha256": "2662c239047da67c37c7725c5432d57e7e50d3a07cbce33517c5ef9c62ef081a"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/overview/OverviewTab.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/overview/OverviewTab.tsx",
+    "sha256": "28624212c20f376717a3341fa0680eed9dd40aaf33db592fd6bd0b4cb64a93ba"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/overview/JDAnalysis.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/overview/JDAnalysis.tsx",
+    "sha256": "0064aec711700295ac36d37cfb5508c40ae342b8f3e1e51ab2af0ca430708811"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/overview/NextActionCard.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/overview/NextActionCard.tsx",
+    "sha256": "9d424789c63c2f1343fff847c80f4774858161f3dff82b6f38a422bede89489f"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/dashboard/overview/NotesSection.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/dashboard/overview/NotesSection.tsx",
+    "sha256": "0c9de283ecfbfb0bea3e1d45300bd16e202a50b59a375ed820ce6ca0659b68de"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/components/story/StoryPage.tsx",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/components/story/StoryPage.tsx",
+    "sha256": "94f4577d238d7e485139acf84119f4513dc5b1dd0f035f63fc972de245f86783"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/lib/supabase-server.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/lib/supabase-server.ts",
+    "sha256": "7aadf04538869f0a47f98713883abdca5627e9cdfc004793eb1ad327b9e738f5"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/lib/read-generate-email-stream.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/lib/read-generate-email-stream.ts",
+    "sha256": "7c024839aad6f3054b96a8d2b6eb4b46cc5874a64da7175ead437a42ed260019"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/lib/utils.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/lib/utils.ts",
+    "sha256": "38780b8daff851f5fba06c1835fcf564024a17cf294a0bc7c986243fc1dbf8d2"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/lib/ai.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/lib/ai.ts",
+    "sha256": "d27eaba5c9ff336eac091227572006cfc9a56dfff4efe7b52fb3bd79eadbb006"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/lib/supabase.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/lib/supabase.ts",
+    "sha256": "ebeb42f32186abb694b2f67cb3c8f188ab921684b6280fe3c8e2c3112ffd7fa5"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/candor_final/src/store/useAppStore.ts",
+    "archive": "_archive/original-sources-20260908-132735/candor_final/src/store/useAppStore.ts",
+    "sha256": "b220243bbbe99577298836dc1d405be9403b392a15bf185a5ab7a2e289633727"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/middleware.ts",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/middleware.ts",
+    "sha256": "551d18f01b7470cbbc5fb44bccdad31418abad8f9e0647d707b7182a0f39b790"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/tailwind.config.js",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/tailwind.config.js",
+    "sha256": "ffebc67e8c9cff237f36e8cda6695fedfdb46815ef14b8cdae9b06963a4502eb"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/CANDOR_SPEC.md",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/CANDOR_SPEC.md",
+    "sha256": "5936feaedb01fad76bba40fe8f3c91c507de9296b94f6caa381b24178cd0f62f"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/next.config.js",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/next.config.js",
+    "sha256": "6823b8c0cccc44f5577c79c8bdeadf7996eb076157383bfbbbdfbf8139b41af0"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/next-env.d.ts",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/next-env.d.ts",
+    "sha256": "9269d492817e359123ac64c8205e5d05dab63d71a3a7a229e68b5d9a0e8150bf"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/package-lock.json",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/package-lock.json",
+    "sha256": "4384e13cca52fb048e2b4d9b25ac6f2242119179e645f859895872a5db09a567"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/package.json",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/package.json",
+    "sha256": "595a28128d00b68ffaa4ea5be3ca5c400efb1374f1a350474d531e41fe5a7ce8"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/components.json",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/components.json",
+    "sha256": "c06623c6195104e032a4484277f9e4220202f0d7f685754caef30d74ec776a1c"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/tsconfig.json",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/tsconfig.json",
+    "sha256": "048739429be05b811aadd68d4bd37bba6f8138154175d7364371ec3cd95578dd"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/BUILD_ORDER.md",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/BUILD_ORDER.md",
+    "sha256": "70a030d47a13d5914adc1297145099c65e96d06ccc3938de78eac024244b309b"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/.env.example",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/.env.example",
+    "sha256": "a00615e36ae8c7eb5ace9186dae82896b4748b7e7a90b357fc9fc22064ad464d"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/postcss.config.js",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/postcss.config.js",
+    "sha256": "6bbbfd323867a78af8d7ee348a179835202fc7a71f4c2b3e3f34de6f5f895c76"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/.eslintrc.json",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/.eslintrc.json",
+    "sha256": "a5001b4a20e28cc72e62bd3b6bc9528c2e8457021c99dbe8a99bcb7495108af6"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/supabase/seed.sql",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/supabase/seed.sql",
+    "sha256": "e853a7bdf11f7bfeba543fb0252b4821c28419aeecbf9dfbb4c767ce3f40d684"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/supabase/schema.sql",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/supabase/schema.sql",
+    "sha256": "e180b81a2a8e03f212fc9ff1a16a88e4e425cc4219803d125285978f6013603f"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/types/database.ts",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/types/database.ts",
+    "sha256": "1c8a9298da106e26e394d3e25996ccfd438936d2b0099472e62213734f24665c"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/contexts/IndustriesContext.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/contexts/IndustriesContext.tsx",
+    "sha256": "a9f5be25194c3e66d54573030561ae351eb124e74649cfb769703b051f667fd1"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/layout.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/layout.tsx",
+    "sha256": "d5b74b9e7e32855d8b51608391785a4668a9c889478ea3b32c7d92dbc4d3c6d3"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/page.tsx",
+    "sha256": "52e88e81dd97062fb3f450b71a57457900b5e4e2a67f3ab68dcd9062cce3ddbb"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/globals.css",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/globals.css",
+    "sha256": "1370e954c5de9a1fe045f42db99a69b7fb3ec05e47dca93e4338842e74b66924"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/signup/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/signup/page.tsx",
+    "sha256": "494ddd0987596cd43909441d038383787eafd1004f6042d95ee81322221719a1"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/dashboard/layout.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/dashboard/layout.tsx",
+    "sha256": "459db1a30590c1da03b9d93fd25ed64c7d459c33634634416513c55a874bfc5d"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/dashboard/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/dashboard/page.tsx",
+    "sha256": "963bba42b052e38398de43736abe7c2165f47882b18df6997b7fbf65afa4947f"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/dashboard/board/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/dashboard/board/page.tsx",
+    "sha256": "84403f169d88ab2e49a764456e56fd0f9ffbadb453e52fd77d95ecdfb1892359"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/dashboard/profile/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/dashboard/profile/page.tsx",
+    "sha256": "31341f989ebdd7cd62a5466624e126bae70f7a6166f228f7c971dbecba56c77e"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/dashboard/jobs/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/dashboard/jobs/page.tsx",
+    "sha256": "8b8b9aec9d94d714ed6b61434c0def9cba66da81d447fce5530163e54d5fbc8d"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/dashboard/analytics/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/dashboard/analytics/page.tsx",
+    "sha256": "98b4862de2647f74e6b681036a35932e68faa45f557ff9835273ce3d8d9cef6b"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/app/login/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/app/login/page.tsx",
+    "sha256": "3b65e3a560e953f78396aaa59d5b187d676320809627aee18376b0365693ac94"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/components/sidebar.tsx",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/components/sidebar.tsx",
+    "sha256": "813a0e1e74d8cc23f07da8e56cc83f7635444b5aadbe4f9200296fe45365d8c3"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/hooks/useProfile.ts",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/hooks/useProfile.ts",
+    "sha256": "74640030ca0078d462b57731b9eb60835ed57ef1c58f0c781986b2c6c5662dd1"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/hooks/useCompany.ts",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/hooks/useCompany.ts",
+    "sha256": "af796535a2ebf17dc6c5735c1aa97166e18a31d42b248062fb053c059256c686"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/hooks/useIndustries.ts",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/hooks/useIndustries.ts",
+    "sha256": "c7396b885977cfa721e9ee0d9ff525acfe59ec6f9206e3fc5ba71935d514b597"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/lib/utils.ts",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/lib/utils.ts",
+    "sha256": "c19fe362f863a82ea9b01d42d07a92788763b2afd036b5e12bf872a5d016374e"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/lib/constants.ts",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/lib/constants.ts",
+    "sha256": "d06c6d45d91249e6be1870a840e786bd4a4d9b4c358108770cb45ce1ca1df0c1"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/lib/supabase/client.ts",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/lib/supabase/client.ts",
+    "sha256": "7de22d47b4a2a0bcbc8bbf85c1986275034459aab163ca1a56c6f48d90269029"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/CandorApp/src/lib/supabase/server.ts",
+    "archive": "_archive/original-sources-20260908-132735/CandorApp/src/lib/supabase/server.ts",
+    "sha256": "ef0ed3c0505225e159a1c6b463a7a97f9b982231ea44735afdbf8567fb72bfae"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/ARCHITECTURE.md",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/ARCHITECTURE.md",
+    "sha256": "50c8f9c00b60e27fe6be9978a2965efcdcecc3f31093c78b0da9de428c726345"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/index.html",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/index.html",
+    "sha256": "e1a36db70bd21715eadd8c770a0a418d49258a267e313f1eab87f56574a7acbd"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/README.md",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/README.md",
+    "sha256": "5d4fb0236b062360f3cdd260fa4289c446f043b492e09580d533438ef0ccb760"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/.gitignore",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/.gitignore",
+    "sha256": "cc2bbdffa74321512c7e4fcb6e9517617fe9f2dba5b1280ae32256d3d0bde4a6"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/package-lock.json",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/package-lock.json",
+    "sha256": "728d85739ae43b46d8797be393a893ff6f161379a4971d9fe51ac6e66ed20526"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/postcss.config.mjs",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/postcss.config.mjs",
+    "sha256": "ac31e2a95ef64fe27ceb4124e101675273107aae2e33bc490b01d919e7f03646"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/next.config.mjs",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/next.config.mjs",
+    "sha256": "1e3206cb200e264fdddb4dbb2e4772daebc839fdbc94b78316d74892a0de6fa2"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/next-env.d.ts",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/next-env.d.ts",
+    "sha256": "7ad303e40d4fddf44f156129e397511953a71481c5cfd86b1862649aaaf240cc"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/README.md",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/README.md",
+    "sha256": "ecd87fab04b795c1758d0bafccc2c8d8f5f3459b511b07a4f9c04345c0c1bbfa"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/tailwind.config.ts",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/tailwind.config.ts",
+    "sha256": "dfe65925b795dfb685df35889549350f35eed6ae348c748f21776efcf26fb772"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/GETTING_STARTED.md",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/GETTING_STARTED.md",
+    "sha256": "4a214073a4e7464a9c2c0f63eca30d5ef5c17f491a1d86f87b9b1fe0b2356b10"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/package-lock.json",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/package-lock.json",
+    "sha256": "f2c67b76115356b3174ae2468d328032e073eaf198e4c28ac70aba9e8b9a2f69"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/package.json",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/package.json",
+    "sha256": "c0129937d937695e9fb59bed6c90d563b5e47fc8e543d66e02b21494df855b1f"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/components.json",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/components.json",
+    "sha256": "87862848cd343349adc2370f80a07b39fdb0d0903bc038064a9eac87f4d61f2c"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/tsconfig.json",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/tsconfig.json",
+    "sha256": "fb8dab2900d0cd8a3c57fd085763410220de9dc8c514d5e86d04abfe16d5cacd"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/supabase/schema.sql",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/supabase/schema.sql",
+    "sha256": "f3740664bc2173bedea1d883d803fcb46ccf978dd3aff0ba3e30031285db232b"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/middleware.ts",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/middleware.ts",
+    "sha256": "7c03023a8d11cc06fbc01fcbb8ca6ec569c32f06b619198637d5283a46818bbe"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/app/layout.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/app/layout.tsx",
+    "sha256": "7dbfc28539809b8cd74ed351d6edd5560fdf058a9c30d20e6009a23b9721c9c0"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/app/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/app/page.tsx",
+    "sha256": "39821fdbcf69450e847009491c900cd81db55c1f5922027b22b4bd4b6eaaa1b8"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/app/globals.css",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/app/globals.css",
+    "sha256": "33a4749b4d62fa68218d0993e45f821c9d940b72675196f7eb0014f64a38fe0c"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/app/dashboard/layout.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/app/dashboard/layout.tsx",
+    "sha256": "0ec6684484bd55fdc2e0e0a4e039fa91cabefbbfc8ed82d42137645a1ee1022f"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/app/dashboard/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/app/dashboard/page.tsx",
+    "sha256": "3a5db65979de36dd944707009b0de0fc76c2d62fd0ea72c567da41ffb5e32298"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/app/dashboard/tracker/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/app/dashboard/tracker/page.tsx",
+    "sha256": "58f76286ab06f51106f236fed454cbc720d816910603e082a2e823c0e1e7af63"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/app/dashboard/profile/page.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/app/dashboard/profile/page.tsx",
+    "sha256": "0ceb1622b471427dc09976d0ecfdcd60beb985786d19ea66a550d84c2102fd23"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/components/board-view.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/components/board-view.tsx",
+    "sha256": "57075b46a2d5d8ef636e7f6af0bddf9137819d057def5d0917134b50305f4b59"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/components/profile-view.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/components/profile-view.tsx",
+    "sha256": "b8aec92b36123f3a5bd3af1b330690287d0f267cffa1b6411f609b351bbacb7d"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/components/tracker-view.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/components/tracker-view.tsx",
+    "sha256": "9b62df2663b7fd26dcdcbb3500302beef9b48a5a7b1a547529278544606210d4"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/components/dashboard-nav.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/components/dashboard-nav.tsx",
+    "sha256": "d0dd70b80157cff3675eded152b97d9e191a20f266c8120690c82ae357120ba4"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/components/dashboard-header-actions.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/components/dashboard-header-actions.tsx",
+    "sha256": "ec3485baff4c0d3a5b67ecdee0732082ea05ce393844be1d739373529195f0a4"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/components/ui/tabs.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/components/ui/tabs.tsx",
+    "sha256": "31eeb4a9d82873363283b870f71c47b27538e985e5ef51a7a15383149ba843c3"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/components/ui/card.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/components/ui/card.tsx",
+    "sha256": "b30a7d9c70ce62a26036afbdbf98b54a38ff7a609f898e2f56148768e7f1bc60"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/components/ui/button.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/components/ui/button.tsx",
+    "sha256": "ff969085d3222e21f22aeff19f70f31f8bd4109dc6327d5ad53aa7f603d5545c"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/components/ui/input.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/components/ui/input.tsx",
+    "sha256": "334b06925a1fdbf68cb217dfc8ca00ca2c3aedc2e1adead172f8811e6a909217"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/lib/demo-data.ts",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/lib/demo-data.ts",
+    "sha256": "3bb7f55c8fab4843a61ac5597f4fee38d09347d1f795ce27c6af56e63a8f9762"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/lib/utils.ts",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/lib/utils.ts",
+    "sha256": "d1f1e0d62cb8d8d1e04c26e14de842d8a151f75812d81b046c65b5d1fe8e4b27"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/lib/database.types.ts",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/lib/database.types.ts",
+    "sha256": "4ce1a2969bd9fd6d63842f013cf5d8a7564eea8ec43d7f85df4b306050a9325c"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/lib/IndustriesContext.tsx",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/lib/IndustriesContext.tsx",
+    "sha256": "e3e1e1613948bf85ac3b567b4b96dac946d8e499035f723a5e104de064e58655"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/lib/supabase/middleware.ts",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/lib/supabase/middleware.ts",
+    "sha256": "e6d50a4c256d36e494a6ee1f50b740ffd81565d61f1aeeb77ad7b52882508af8"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/lib/supabase/client.ts",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/lib/supabase/client.ts",
+    "sha256": "edd9e5f70e5fec99f62fa7836a56d5e1a453877de30c4b7f528436f27246261b"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/web/src/lib/supabase/server.ts",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/web/src/lib/supabase/server.ts",
+    "sha256": "a58d2fe54d7eb20fce8102c06e291768485c9e3549d4a151f86802caacd949f4"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/server/server.js",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/server/server.js",
+    "sha256": "f3c07ce616feb414e38225bc326013e79191081c86ffd86614f406461a6d2298"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/server/package.json",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/server/package.json",
+    "sha256": "c7e8febd955da8069912bafbbbf85f5e11df9d3110554ecf55057b31ac32b3f5"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/server/.env.example",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/server/.env.example",
+    "sha256": "8b7dd959826e366993760db2dedec5b33387e2541f6e129fab8ec7e206647f94"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/server/middleware/auth.js",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/server/middleware/auth.js",
+    "sha256": "ebb4cfd748f809ccffad7d2bc79ead075158a9d63c28a4e9370af007a16cf94c"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/server/prisma/schema.prisma",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/server/prisma/schema.prisma",
+    "sha256": "f4887061fd078e3397d8de6a578f36dfa1aaecda2d087efd140f11679a1548a0"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/server/lib/ai.js",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/server/lib/ai.js",
+    "sha256": "03d7f332324dfda3c674852f7cd38cc72bb50735cca2de838da59ff9b81a5c4e"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/server/routes/applications.js",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/server/routes/applications.js",
+    "sha256": "fdf43fe9ba719852907cfed03718bc8c9a42656069999564cf2d56bca70784f7"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/server/routes/auth.js",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/server/routes/auth.js",
+    "sha256": "dbc3488c3ec2ae59268cf12c39c89b5cced0dcc354eb78b800fde7b53a47757b"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/server/routes/resume.js",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/server/routes/resume.js",
+    "sha256": "c490e61984234f1a0da8ef74a1573d1e9ad45345235b55263067f0525c1d60a0"
+  },
+  {
+    "source": "/Users/matthewhuehne/Desktop/Code/Repositories/CandorApp/server/routes/email.js",
+    "archive": "_archive/original-sources-20260908-132735/earlier-repository/server/routes/email.js",
+    "sha256": "ddc7ec658d27880eb436db5ff1557a849aba4119a25369c0336fdcf1a27182de"
+  }
+]
